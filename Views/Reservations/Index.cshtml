@@ -1,0 +1,42 @@
+@model IEnumerable<Reservation>
+@{
+    ViewData["Title"] = "Мої бронювання";
+}
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-danger">@error</div>
+}
+@if (TempData["Success"] is string success)
+{
+    <div class="alert alert-success">@success</div>
+}
+<h1>Мої бронювання</h1>
+@if (!Model.Any())
+{
+    <p>У вас поки немає бронювань.</p>
+}
+else
+{
+    <table class="table">
+        <thead><tr><th>Книга</th><th>Дата</th><th>Статус</th><th></th></tr></thead>
+        <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Book?.Title</td>
+                <td>@item.ReservationDate.ToLocalTime().ToString("g")</td>
+                <td>@item.Status</td>
+                <td>
+                    @if (item.Status == "active")
+                    {
+                        <form asp-action="Cancel" method="post">
+                            <input type="hidden" name="id" value="@item.ReservationId" />
+                            <button type="submit" class="btn btn-outline-danger btn-sm">Скасувати</button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}

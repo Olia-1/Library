@@ -1,0 +1,30 @@
+@model Book
+@{
+    ViewData["Title"] = Model.Title;
+}
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-danger">@error</div>
+}
+@if (TempData["Success"] is string success)
+{
+    <div class="alert alert-success">@success</div>
+}
+<h1>@Model.Title</h1>
+<p><strong>Опис:</strong> @Model.Description</p>
+<p><strong>Рік видання:</strong> @Model.PublicationYear</p>
+<p><strong>Жанр:</strong> @Model.Genre?.Name</p>
+<p><strong>Автори:</strong> @string.Join(", ", Model.BookAuthors.Select(x => $"{x.Author?.FirstName} {x.Author?.LastName}"))</p>
+<p><strong>Вільних примірників:</strong> @Model.Copies.Count(c => c.Status == "available")</p>
+<p>Книгу можна забронювати незалежно від наявності вільних примірників, якщо виконані правила бронювання.</p>
+@if (User.Identity?.IsAuthenticated == true && User.IsInRole("Reader"))
+{
+    <form asp-controller="Reservations" asp-action="Create" method="post">
+        <input type="hidden" name="bookId" value="@Model.BookId" />
+        <button type="submit" class="btn btn-primary">Забронювати книгу</button>
+    </form>
+}
+else if (User.Identity?.IsAuthenticated != true)
+{
+    <p><a asp-controller="Account" asp-action="Login">Увійдіть</a>, щоб забронювати книгу.</p>
+}

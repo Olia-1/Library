@@ -1,0 +1,33 @@
+@model IEnumerable<Book>
+@{
+    ViewData["Title"] = "Каталог книг";
+}
+<h1>Каталог книг</h1>
+<form method="get" asp-action="Index" class="mb-3">
+    <div class="input-group">
+        <input type="text" name="search" value="@ViewData["Search"]" class="form-control" placeholder="Пошук за назвою" />
+        <button class="btn btn-outline-primary" type="submit">Знайти</button>
+    </div>
+</form>
+@if (!Model.Any())
+{
+    <p>Книг поки немає або нічого не знайдено.</p>
+}
+else
+{
+    <table class="table">
+        <thead><tr><th>Назва</th><th>Жанр</th><th>Автори</th><th>Примірники вільні</th><th></th></tr></thead>
+        <tbody>
+        @foreach (var book in Model)
+        {
+            <tr>
+                <td>@book.Title</td>
+                <td>@book.Genre?.Name</td>
+                <td>@string.Join(", ", book.BookAuthors.Select(x => $"{x.Author?.FirstName} {x.Author?.LastName}"))</td>
+                <td>@book.Copies.Count(c => c.Status == "available")</td>
+                <td><a asp-action="Details" asp-route-id="@book.BookId">Детальніше</a></td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
