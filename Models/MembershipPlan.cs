@@ -5,21 +5,19 @@ namespace PrivateLibrary.Models;
 
 public class MembershipPlan
 {
-    [Key]
     public int PlanId { get; set; }
 
     [Required, StringLength(100)]
     public string Name { get; set; } = string.Empty;
 
-    [Range(typeof(decimal), "0", "10000")]
+    public string? Description { get; set; }
+
     [Column(TypeName = "decimal(10,2)")]
+    [Range(0, double.MaxValue)]
     public decimal Price { get; set; }
 
-    [Range(1, 3650)]
+    [Range(1, int.MaxValue)]
     public int DurationDays { get; set; }
-
-    [StringLength(1000)]
-    public string? Description { get; set; }
 
     public bool IsActive { get; set; } = true;
 

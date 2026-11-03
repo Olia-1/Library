@@ -18,7 +18,7 @@
 else
 {
     <table class="table">
-        <thead><tr><th>Книга</th><th>Дата</th><th>Статус</th><th></th></tr></thead>
+        <thead><tr><th>Книга</th><th>Дата</th><th>Статус</th><th>Позиція в черзі</th><th>Отримати до</th><th></th></tr></thead>
         <tbody>
         @foreach (var item in Model)
         {
@@ -26,8 +26,10 @@ else
                 <td>@item.Book?.Title</td>
                 <td>@item.ReservationDate.ToLocalTime().ToString("g")</td>
                 <td>@item.Status</td>
+                <td>@(item.QueuePosition?.ToString() ?? "—")</td>
+                <td>@(item.ExpirationDate?.ToLocalTime().ToString("g") ?? "—")</td>
                 <td>
-                    @if (item.Status == "active")
+                    @if (item.Status is "Pending" or "Ready")
                     {
                         <form asp-action="Cancel" method="post">
                             <input type="hidden" name="id" value="@item.ReservationId" />

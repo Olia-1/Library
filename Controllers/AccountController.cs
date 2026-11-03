@@ -10,9 +10,7 @@ public class AccountController : Controller
     private readonly UserManager<User> _userManager;
     private readonly SignInManager<User> _signInManager;
 
-    public AccountController(
-        UserManager<User> userManager,
-        SignInManager<User> signInManager)
+    public AccountController(UserManager<User> userManager, SignInManager<User> signInManager)
     {
         _userManager = userManager;
         _signInManager = signInManager;
@@ -27,22 +25,37 @@ public class AccountController : Controller
     {
         if (!ModelState.IsValid) return View(model);
 
+        var userName = model.UserName.Trim();
+        var email = string.IsNullOrWhiteSpace(model.Email) ? null : model.Email.Trim();
+        if (await _userManager.FindByNameAsync(userName) is not null)
+        {
+            ModelState.AddModelError(nameof(model.UserName), "This username is already taken.");
+            return View(model);
+        }
+
+        if (email is not null && await _userManager.FindByEmailAsync(email) is not null)
+        {
+            ModelState.AddModelError(nameof(model.Email), "This email address is already in use.");
+            return View(model);
+        }
+
         var user = new User
         {
-            UserName = model.Email.Trim(),
-            Email = model.Email.Trim(),
-            FirstName = model.FirstName.Trim(),
-            LastName = model.LastName.Trim(),
-            Phone = model.Phone.Trim(),
-            PhoneNumber = model.Phone.Trim(),
-            CreatedAt = DateTime.UtcNow
+            UserName = userName,
+            Email = email,
+            // Profile details (first name, last name, and phone) can be added later.
+            FirstName = string.Empty,
+            LastName = string.Empty,
+            CreatedAt = DateTime.UtcNow,
+            IsFavoritesPublic = false
         };
 
         var result = await _userManager.CreateAsync(user, model.Password);
         if (result.Succeeded)
         {
-            // Роль Reader створюється в Program.cs під час запуску.
-            await _userManager.AddToRoleAsync(user, "Reader");
+            if (!await _userManager.IsInRoleAsync(user, "Reader"))
+                await _userManager.AddToRoleAsync(user, "Reader");
+
             await _signInManager.SignInAsync(user, isPersistent: false);
             return RedirectToAction("Index", "Books");
         }
@@ -67,20 +80,24 @@ public class AccountController : Controller
         ViewData["ReturnUrl"] = returnUrl;
         if (!ModelState.IsValid) return View(model);
 
-        var result = await _signInManager.PasswordSignInAsync(
-            model.Email.Trim(), model.Password, model.RememberMe,
-            lockoutOnFailure: true);
+        var login = model.UserName.Trim();
+        var user = await _userManager.FindByNameAsync(login);
 
-        if (result.Succeeded)
+        if (user is not null)
         {
-            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
-                return Redirect(returnUrl);
+            var result = await _signInManager.PasswordSignInAsync(
+                user.UserName!, model.Password, model.RememberMe, lockoutOnFailure: true);
 
-            return RedirectToAction("Index", "Books");
+            if (result.Succeeded)
+            {
+                if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+                    return Redirect(returnUrl);
+
+                return RedirectToAction("Index", "Books");
+            }
         }
 
-        ModelState.AddModelError(string.Empty,
-            "Не вдалося увійти. Перевірте електронну пошту та пароль.");
+        ModelState.AddModelError(string.Empty, "Login failed. Check your username and password.");
         return View(model);
     }
 

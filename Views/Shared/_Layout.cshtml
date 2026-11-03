@@ -1,50 +1,82 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - PrivateLibrary</title>
-    <script type="importmap"></script>
+    <meta name="theme-color" content="#f6efe3" />
+    <title>@ViewData["Title"] - Private Library</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/PrivateLibrary.styles.css" asp-append-version="true" />
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">PrivateLibrary</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
+<body class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Account" ? "auth-body" : "site-body")">
+@{
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+    var action = ViewContext.RouteData.Values["action"]?.ToString();
+    var isAuthPage = controller == "Account" && (action == "Login" || action == "Register");
+}
+@if (!isAuthPage)
+{
+    <header class="site-header">
+        <nav class="site-nav" aria-label="Main navigation">
+           <a class="brand brand-nav"
+               asp-controller="Home"
+               asp-action="Index"
+               aria-label="Private Library home">
+               <span>Library</span>
+            </a>
+            <button class="nav-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false" aria-controls="navLinks">
+                <span></span><span></span><span></span>
+            </button>
+            <div class="nav-links" id="navLinks">
+                <a asp-controller="Books" asp-action="Index">Catalog</a>
+                <a asp-controller="Home" asp-action="Index" asp-fragment="events">Events</a>
+                <a asp-controller="Home" asp-action="Privacy">About</a>
             </div>
+            <form class="nav-search" asp-controller="Books" asp-action="Index" method="get">
+                <input type="search" name="search" placeholder="Search books, authors..." aria-label="Search books and authors" />
+                <button type="submit" aria-label="Search">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg>
+                </button>
+            </form>
+            <a class="nav-icon" asp-controller="Books" asp-action="Index" aria-label="Favorites">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.8a5.4 5.4 0 0 0-7.6 0L12 6l-1.2-1.2a5.4 5.4 0 0 0-7.6 7.6L12 21l8.8-8.6a5.4 5.4 0 0 0 0-7.6Z"></path></svg>
+            </a>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <div class="nav-user">
+                    <span class="user-greeting">Hello, @User.Identity.Name</span>
+                    <form asp-controller="Account" asp-action="Logout" method="post">
+                        <button class="nav-signin" type="submit">Log out</button>
+                    </form>
+                </div>
+            }
+            else
+            {
+                <a class="nav-profile" asp-controller="Account" asp-action="Login" aria-label="Log in">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20c.5-4 3-6 7-6s6.5 2 7 6"></path></svg>
+                </a>
+            }
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
-
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - PrivateLibrary - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
+}
+<main role="main" class="@(isAuthPage ? "auth-main" : "site-main")">
+    @RenderBody()
+</main>
+@if (!isAuthPage)
+{
+    <footer class="site-footer">
+        <div class="footer-brand"><span>Library</span></div>
+        <p>A quiet place for curious minds.</p>
+        <span>© @DateTime.Now.Year Private Library</span>
     </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+}
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

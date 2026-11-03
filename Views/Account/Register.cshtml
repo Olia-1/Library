@@ -1,42 +1,48 @@
 @model RegisterViewModel
 @{
-    ViewData["Title"] = "Реєстрація";
+    ViewData["Title"] = "Create an Account";
 }
-<h1>Реєстрація</h1>
-<form asp-action="Register" method="post">
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-    <div class="mb-3">
-        <label asp-for="FirstName" class="form-label"></label>
-        <input asp-for="FirstName" class="form-control" />
-        <span asp-validation-for="FirstName" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="LastName" class="form-label"></label>
-        <input asp-for="LastName" class="form-control" />
-        <span asp-validation-for="LastName" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="Email" class="form-label"></label>
-        <input asp-for="Email" class="form-control" autocomplete="email" />
-        <span asp-validation-for="Email" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="Phone" class="form-label"></label>
-        <input asp-for="Phone" class="form-control" />
-        <span asp-validation-for="Phone" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="Password" class="form-label"></label>
-        <input asp-for="Password" class="form-control" autocomplete="new-password" />
-        <span asp-validation-for="Password" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="ConfirmPassword" class="form-label"></label>
-        <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" />
-        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
-    </div>
-    <button type="submit" class="btn btn-primary">Зареєструватися</button>
-</form>
+<div class="auth-scene auth-scene-register">
+    <div class="auth-botanical auth-botanical-top"></div>
+    <div class="auth-botanical auth-botanical-bottom"></div>
+    <a class="auth-brand" asp-controller="Home" asp-action="Index">
+        <span class="auth-brand-name">Library</span>
+        <span class="auth-brand-tagline">Private Library</span>
+    </a>
+    <section class="auth-card">
+        <h1>Create an Account</h1>
+        <p class="auth-intro">Join our library to get access to all features: book catalog, reservations, events and more.</p>
+        <form asp-action="Register" method="post" class="auth-form">
+            <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+            <label class="input-wrap">
+                <span class="field-icon" aria-hidden="true">♙</span>
+                <input asp-for="UserName" autocomplete="username" placeholder="Username" aria-label="Username" />
+            </label>
+            <span asp-validation-for="UserName" class="field-validation"></span>
+            <label class="input-wrap">
+                <span class="field-icon" aria-hidden="true">✉</span>
+                <input asp-for="Email" type="email" autocomplete="email" placeholder="Email address" aria-label="Email address" />
+            </label>
+            <span asp-validation-for="Email" class="field-validation"></span>
+            <label class="input-wrap">
+                <span class="field-icon" aria-hidden="true">♙</span>
+                <input asp-for="Password" id="registerPassword" type="password" autocomplete="new-password" placeholder="Password" aria-label="Password" />
+                <button class="password-toggle" type="button" data-toggle-password="registerPassword" aria-label="Show password">◉</button>
+            </label>
+            <span asp-validation-for="Password" class="field-validation"></span>
+            <label class="input-wrap">
+                <span class="field-icon" aria-hidden="true">♙</span>
+                <input asp-for="ConfirmPassword" id="confirmPassword" type="password" autocomplete="new-password" placeholder="Confirm password" aria-label="Confirm password" />
+                <button class="password-toggle" type="button" data-toggle-password="confirmPassword" aria-label="Show password">◉</button>
+            </label>
+            <span asp-validation-for="ConfirmPassword" class="field-validation"></span>
+            <label class="terms-option"><input type="checkbox" required /> <span>I agree to the <a asp-controller="Home" asp-action="Privacy">Terms of Use</a> and <a asp-controller="Home" asp-action="Privacy">Privacy Policy</a></span></label>
+            <button type="submit" class="auth-submit">Sign Up</button>
+        </form>
+        <p class="auth-switch">Already have an account? <a asp-action="Login">Log in</a></p>
+    </section>
+    <div class="auth-book-decoration" aria-hidden="true"><span></span><span></span><span></span></div>
+</div>
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }

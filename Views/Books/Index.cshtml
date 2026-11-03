@@ -24,7 +24,7 @@ else
                 <td>@book.Title</td>
                 <td>@book.Genre?.Name</td>
                 <td>@string.Join(", ", book.BookAuthors.Select(x => $"{x.Author?.FirstName} {x.Author?.LastName}"))</td>
-                <td>@book.Copies.Count(c => c.Status == "available")</td>
+                <td>@book.Copies.Count(c => c.Status == "Available")</td>
                 <td><a asp-action="Details" asp-route-id="@book.BookId">Детальніше</a></td>
             </tr>
         }

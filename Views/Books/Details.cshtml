@@ -15,7 +15,7 @@
 <p><strong>Рік видання:</strong> @Model.PublicationYear</p>
 <p><strong>Жанр:</strong> @Model.Genre?.Name</p>
 <p><strong>Автори:</strong> @string.Join(", ", Model.BookAuthors.Select(x => $"{x.Author?.FirstName} {x.Author?.LastName}"))</p>
-<p><strong>Вільних примірників:</strong> @Model.Copies.Count(c => c.Status == "available")</p>
+<p><strong>Вільних примірників:</strong> @Model.Copies.Count(c => c.Status == "Available")</p>
 <p>Книгу можна забронювати незалежно від наявності вільних примірників, якщо виконані правила бронювання.</p>
 @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Reader"))
 {
