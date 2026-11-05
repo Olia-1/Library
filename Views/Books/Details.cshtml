@@ -11,20 +11,20 @@
     <div class="alert alert-success">@success</div>
 }
 <h1>@Model.Title</h1>
-<p><strong>Опис:</strong> @Model.Description</p>
-<p><strong>Рік видання:</strong> @Model.PublicationYear</p>
-<p><strong>Жанр:</strong> @Model.Genre?.Name</p>
-<p><strong>Автори:</strong> @string.Join(", ", Model.BookAuthors.Select(x => $"{x.Author?.FirstName} {x.Author?.LastName}"))</p>
-<p><strong>Вільних примірників:</strong> @Model.Copies.Count(c => c.Status == "Available")</p>
-<p>Книгу можна забронювати незалежно від наявності вільних примірників, якщо виконані правила бронювання.</p>
+<p><strong>Description:</strong> @Model.Description</p>
+<p><strong>Publication year:</strong> @Model.PublicationYear</p>
+<p><strong>Genre:</strong> @Model.Genre?.Name</p>
+<p><strong>Authors:</strong> @string.Join(", ", Model.BookAuthors.Select(x => $"{x.Author?.FirstName} {x.Author?.LastName}"))</p>
+<p><strong>Available copies:</strong> @Model.Copies.Count(c => c.Status == "Available")</p>
+<p>You can reserve this book even when no copies are currently available, subject to the reservation rules.</p>
 @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Reader"))
 {
     <form asp-controller="Reservations" asp-action="Create" method="post">
         <input type="hidden" name="bookId" value="@Model.BookId" />
-        <button type="submit" class="btn btn-primary">Забронювати книгу</button>
+        <button type="submit" class="btn btn-primary">Reserve this book</button>
     </form>
 }
 else if (User.Identity?.IsAuthenticated != true)
 {
-    <p><a asp-controller="Account" asp-action="Login">Увійдіть</a>, щоб забронювати книгу.</p>
+    <p><a asp-controller="Account" asp-action="Login">Sign in</a> to reserve this book.</p>
 }

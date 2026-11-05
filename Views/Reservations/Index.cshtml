@@ -1,6 +1,6 @@
 @model IEnumerable<Reservation>
 @{
-    ViewData["Title"] = "Мої бронювання";
+    ViewData["Title"] = "My Reservations";
 }
 @if (TempData["Error"] is string error)
 {
@@ -10,15 +10,15 @@
 {
     <div class="alert alert-success">@success</div>
 }
-<h1>Мої бронювання</h1>
+<h1>My Reservations</h1>
 @if (!Model.Any())
 {
-    <p>У вас поки немає бронювань.</p>
+    <p>You do not have any reservations yet.</p>
 }
 else
 {
     <table class="table">
-        <thead><tr><th>Книга</th><th>Дата</th><th>Статус</th><th>Позиція в черзі</th><th>Отримати до</th><th></th></tr></thead>
+        <thead><tr><th>Book</th><th>Date</th><th>Status</th><th>Queue position</th><th>Collect by</th><th></th></tr></thead>
         <tbody>
         @foreach (var item in Model)
         {
@@ -33,7 +33,7 @@ else
                     {
                         <form asp-action="Cancel" method="post">
                             <input type="hidden" name="id" value="@item.ReservationId" />
-                            <button type="submit" class="btn btn-outline-danger btn-sm">Скасувати</button>
+                            <button type="submit" class="btn btn-outline-danger btn-sm">Cancel</button>
                         </form>
                     }
                 </td>

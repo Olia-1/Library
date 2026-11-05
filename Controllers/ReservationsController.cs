@@ -44,7 +44,7 @@ public class ReservationsController : Controller
 
         if (string.IsNullOrWhiteSpace(user.FirstName) || string.IsNullOrWhiteSpace(user.LastName))
         {
-            TempData["Error"] = "Заповніть ім’я та прізвище в обліковому записі перед бронюванням.";
+            TempData["Error"] = "Please add your first and last name to your account before making a reservation.";
             return RedirectToAction("Details", "Books", new { id = bookId });
         }
 
@@ -57,7 +57,7 @@ public class ReservationsController : Controller
 
         if (userActiveCount >= MaxActiveReservationsPerReader)
         {
-            TempData["Error"] = $"Можна мати не більше {MaxActiveReservationsPerReader} активних бронювань.";
+            TempData["Error"] = $"You can have no more than {MaxActiveReservationsPerReader} active reservations.";
             return RedirectToAction("Details", "Books", new { id = bookId });
         }
 
@@ -65,7 +65,7 @@ public class ReservationsController : Controller
             r.UserId == user.Id && r.BookId == bookId && activeStatuses.Contains(r.Status));
         if (alreadyHasActiveForBook)
         {
-            TempData["Error"] = "У вас уже є активне бронювання цієї книги.";
+            TempData["Error"] = "You already have an active reservation for this book.";
             return RedirectToAction("Details", "Books", new { id = bookId });
         }
 
@@ -97,7 +97,7 @@ public class ReservationsController : Controller
 
             if (waitingCount >= MaxWaitingQueuePerBook)
             {
-                TempData["Error"] = $"Черга очікування вже заповнена (максимум {MaxWaitingQueuePerBook} читачі).";
+                TempData["Error"] = $"The waiting list is full (maximum {MaxWaitingQueuePerBook} readers).";
                 return RedirectToAction("Details", "Books", new { id = bookId });
             }
 
@@ -115,18 +115,18 @@ public class ReservationsController : Controller
         _context.Notifications.Add(new Notification
         {
             UserId = user.Id,
-            Title = "Бронювання книги",
+            Title = "Book reservation",
             Message = reservation.Status == "Ready"
-                ? $"Книга доступна для отримання протягом 7 днів. Бронювання №{reservation.ReservationId}."
-                : $"Вас додано до черги очікування книги. Позиція: {reservation.QueuePosition}.",
+                ? $"The book is available for pickup for 7 days. Reservation #{reservation.ReservationId}."
+                : $"You have been added to the book waiting list. Position: {reservation.QueuePosition}.",
             CreatedAt = now,
             IsRead = false
         });
         await _context.SaveChangesAsync();
 
         TempData["Success"] = reservation.Status == "Ready"
-            ? "Книгу заброньовано. Заберіть її протягом 7 днів."
-            : $"Вас додано до черги очікування. Ваша позиція: {reservation.QueuePosition}.";
+            ? "The book has been reserved. Please collect it within 7 days."
+            : $"You have been added to the waiting list. Your position: {reservation.QueuePosition}.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -176,11 +176,12 @@ public class ReservationsController : Controller
                     waiting.AvailableFrom = DateTime.UtcNow;
                     waiting.ExpirationDate = DateTime.UtcNow.AddDays(7);
 
+                    var book = await _context.Books.FindAsync(reservation.BookId);
                     _context.Notifications.Add(new Notification
                     {
                         UserId = waiting.UserId,
-                        Title = "Книга стала доступною",
-                        Message = $"Звільнився примірник книги «{(await _context.Books.FindAsync(reservation.BookId))?.Title}». Заберіть його протягом 7 днів.",
+                        Title = "Book available",
+                       Message = $"A copy of the book '{book?.Title}' is now available. Please collect it within 7 days.",
                         CreatedAt = DateTime.UtcNow,
                         IsRead = false
                     });
@@ -199,7 +200,7 @@ public class ReservationsController : Controller
                 await _context.SaveChangesAsync();
             }
 
-            TempData["Success"] = "Бронювання скасовано.";
+            TempData["Success"] = "Reservation cancelled.";
         }
 
         return RedirectToAction(nameof(Index));

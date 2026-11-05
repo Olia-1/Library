@@ -1,33 +1,143 @@
 @model IEnumerable<Book>
+@using PrivateLibrary.Models
 @{
-    ViewData["Title"] = "Каталог книг";
+    ViewData["Title"] = "Book Catalog";
+    var genres = ViewBag.Genres as IEnumerable<Genre> ?? Enumerable.Empty<Genre>();
+    var search = ViewData["Search"] as string ?? string.Empty;
+    var selectedGenre = ViewData["GenreId"]?.ToString() ?? string.Empty;
+    var yearFrom = ViewData["YearFrom"]?.ToString() ?? string.Empty;
+    var yearTo = ViewData["YearTo"]?.ToString() ?? string.Empty;
+    var sort = ViewData["Sort"]?.ToString() ?? "title_asc";
+    var books = Model.ToList();
 }
-<h1>Каталог книг</h1>
-<form method="get" asp-action="Index" class="mb-3">
-    <div class="input-group">
-        <input type="text" name="search" value="@ViewData["Search"]" class="form-control" placeholder="Пошук за назвою" />
-        <button class="btn btn-outline-primary" type="submit">Знайти</button>
+
+<section class="catalog-page">
+    <div class="catalog-heading">
+        <div>
+            <span class="eyebrow"><span class="eyebrow-dot"></span> THE PRIVATE LIBRARY COLLECTION</span>
+            <h1>Book Catalog</h1>
+            <p>Find your next book and make it part of your story.</p>
+        </div>
+        <div class="catalog-count">
+            <strong>@books.Count</strong>
+            <span>@(books.Count == 1 ? "book found" : "books found")</span>
+        </div>
     </div>
-</form>
-@if (!Model.Any())
-{
-    <p>Книг поки немає або нічого не знайдено.</p>
-}
-else
-{
-    <table class="table">
-        <thead><tr><th>Назва</th><th>Жанр</th><th>Автори</th><th>Примірники вільні</th><th></th></tr></thead>
-        <tbody>
-        @foreach (var book in Model)
-        {
-            <tr>
-                <td>@book.Title</td>
-                <td>@book.Genre?.Name</td>
-                <td>@string.Join(", ", book.BookAuthors.Select(x => $"{x.Author?.FirstName} {x.Author?.LastName}"))</td>
-                <td>@book.Copies.Count(c => c.Status == "Available")</td>
-                <td><a asp-action="Details" asp-route-id="@book.BookId">Детальніше</a></td>
-            </tr>
-        }
-        </tbody>
-    </table>
-}
+
+    <section class="catalog-search-panel" aria-label="Catalog search and filters">
+        <form asp-controller="Books" asp-action="Index" method="get" class="catalog-filter-form">
+            <div class="catalog-search-main">
+                <label for="bookSearch">Search the catalog</label>
+                <div class="catalog-search-input">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg>
+                    <input id="bookSearch" type="search" name="search" value="@search"
+                           placeholder="Title, author, genre, or publisher..." />
+                    <button type="submit" class="catalog-search-button">Search</button>
+                </div>
+            </div>
+
+            <div class="catalog-filter-grid">
+                <div class="catalog-field">
+                    <label for="genreId">Genre</label>
+                    <select id="genreId" name="genreId">
+                        <option value="">All genres</option>
+                        @foreach (var genre in genres)
+                        {
+                            <option value="@genre.GenreId" selected="@(selectedGenre == genre.GenreId.ToString())">@genre.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="catalog-field">
+                    <label for="yearFrom">Publication year from</label>
+                    <input id="yearFrom" type="number" name="yearFrom" min="0" max="2100" value="@yearFrom" placeholder="e.g. 2000" />
+                </div>
+                <div class="catalog-field">
+                    <label for="yearTo">Publication year to</label>
+                    <input id="yearTo" type="number" name="yearTo" min="0" max="2100" value="@yearTo" placeholder="e.g. 2025" />
+                </div>
+                <div class="catalog-field">
+                    <label for="sort">Sort by</label>
+                    <select id="sort" name="sort">
+                        <option value="title_asc" selected="@(sort == "title_asc")">Title (A–Z)</option>
+                        <option value="title_desc" selected="@(sort == "title_desc")">Title (Z–A)</option>
+                        <option value="year_desc" selected="@(sort == "year_desc")">Newest first</option>
+                        <option value="year_asc" selected="@(sort == "year_asc")">Oldest first</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="catalog-filter-actions">
+                <a asp-controller="Books" asp-action="Index" class="catalog-reset-link">Clear filters</a>
+                <button type="submit" class="catalog-apply-button">Apply filters</button>
+            </div>
+        </form>
+    </section>
+
+    @if (!books.Any())
+    {
+        <div class="catalog-empty-state">
+            <div class="catalog-empty-icon">⌕</div>
+            <h2>No books found</h2>
+            <p>Try changing your search query or removing some filters.</p>
+            <a asp-controller="Books" asp-action="Index" class="btn-primary-warm">View the full catalog</a>
+        </div>
+    }
+    else
+    {
+        <div class="catalog-results-heading">
+            <h2>Library Collection</h2>
+            <span>@books.Count @(books.Count == 1 ? "result" : "results")</span>
+        </div>
+        <div class="catalog-book-grid">
+            @foreach (var book in books)
+            {
+                var authors = string.Join(", ", book.BookAuthors
+                    .Select(x => $"{x.Author?.FirstName} {x.Author?.LastName}".Trim())
+                    .Where(x => !string.IsNullOrWhiteSpace(x)));
+                var availableCopies = book.Copies.Count(c => c.Status == "Available");
+                <article class="catalog-book-card">
+                    <a asp-action="Details" asp-route-id="@book.BookId" class="catalog-cover-link" aria-label="View book @book.Title">
+                        <div class="catalog-book-cover">
+                            @if (!string.IsNullOrWhiteSpace(book.CoverImageUrl))
+                            {
+                                <img src="@book.CoverImageUrl" alt="Cover of @book.Title" loading="lazy" />
+                            }
+                            else
+                            {
+                                <div class="catalog-cover-placeholder">
+                                    <span class="cover-ornament">✦</span>
+                                    <span class="cover-placeholder-title">@book.Title</span>
+                                    <span class="cover-placeholder-author">@(authors.Length > 0 ? authors : "Private Library")</span>
+                                </div>
+                            }
+                        </div>
+                    </a>
+                    <div class="catalog-book-info">
+                        @if (book.Genre is not null)
+                        {
+                            <span class="genre-pill">@book.Genre.Name</span>
+                        }
+                        <h3><a asp-action="Details" asp-route-id="@book.BookId">@book.Title</a></h3>
+                        <p class="catalog-book-author">@(authors.Length > 0 ? authors : "Author not specified")</p>
+                        <div class="catalog-book-meta">
+                            @if (book.PublicationYear.HasValue)
+                            {
+                                <span>@book.PublicationYear</span>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(book.Publisher))
+                            {
+                                <span>@book.Publisher</span>
+                            }
+                        </div>
+                        <div class="catalog-book-bottom">
+                            <span class="catalog-availability @(availableCopies > 0 ? "is-available" : "is-unavailable")">
+                                <i></i>@(availableCopies > 0 ? $"Available: {availableCopies}" : "Unavailable")
+                            </span>
+                            <a asp-action="Details" asp-route-id="@book.BookId" class="catalog-details-link">View details <span>↗</span></a>
+                        </div>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</section>
