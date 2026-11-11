@@ -10,7 +10,6 @@ public class BooksController : Controller
 
     public BooksController(ApplicationDbContext context) => _context = context;
 
-    // Catalog with search and filters (Lab 5).
     [HttpGet]
     public async Task<IActionResult> Index(
         string? search,
@@ -78,7 +77,6 @@ public class BooksController : Controller
             .Include(b => b.Genre)
             .Include(b => b.BookAuthors).ThenInclude(ba => ba.Author)
             .Include(b => b.Copies)
-            .Include(b => b.Reviews).ThenInclude(r => r.User)
             .FirstOrDefaultAsync(b => b.BookId == id);
 
         return book is null ? NotFound() : View(book);

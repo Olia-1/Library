@@ -1,0 +1,46 @@
+@model EditProfileViewModel
+@{
+    ViewData["Title"] = "Edit profile";
+}
+
+<section class="account-page account-edit-page">
+    <a class="account-back-link" asp-action="Index">← Back to my account</a>
+    <div class="account-welcome">
+        <div><span class="account-eyebrow">PERSONAL INFORMATION</span><h1>Edit profile</h1><p>Keep your account details up to date.</p></div>
+    </div>
+
+    <div class="account-edit-card">
+        <form asp-action="EditProfile" method="post" class="account-edit-form">
+            <div asp-validation-summary="ModelOnly" class="account-validation-summary"></div>
+            <div class="account-form-grid">
+                <div class="account-form-field">
+                    <label asp-for="FirstName"></label>
+                    <input asp-for="FirstName" autocomplete="given-name" />
+                    <span asp-validation-for="FirstName"></span>
+                </div>
+                <div class="account-form-field">
+                    <label asp-for="LastName"></label>
+                    <input asp-for="LastName" autocomplete="family-name" />
+                    <span asp-validation-for="LastName"></span>
+                </div>
+                <p class="account-form-note account-form-field-full">First and last name are optional here. You will need to provide both names before making a book reservation.</p>
+                <div class="account-form-field account-form-field-full">
+                    <label asp-for="PhoneNumber"></label>
+                    <input asp-for="PhoneNumber" autocomplete="tel" placeholder="+380..." />
+                    <span asp-validation-for="PhoneNumber"></span>
+                </div>
+            </div>
+            <label class="account-privacy-option">
+                <input asp-for="IsFavoritesPublic" />
+                <span><strong>Make my favorites list public</strong><small>Allow other library members to see the books you have added to favorites.</small></span>
+            </label>
+            <div class="account-form-actions">
+                <a class="account-secondary-button" asp-action="Index">Cancel</a>
+                <button class="account-primary-button" type="submit">Save changes <span aria-hidden="true">→</span></button>
+            </div>
+        </form>
+    </div>
+</section>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

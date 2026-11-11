@@ -1,0 +1,147 @@
+@model AccountDashboardViewModel
+@{
+    ViewData["Title"] = "My Account";
+    var fullName = $"{Model.User.FirstName} {Model.User.LastName}".Trim();
+    var avatarSource = !string.IsNullOrWhiteSpace(Model.User.FirstName) ? Model.User.FirstName : Model.User.UserName ?? "U";
+    var avatarLetter = avatarSource[..1].ToUpperInvariant();
+}
+
+<section class="account-page">
+    @if (TempData["AccountSuccess"] is string success)
+    {
+        <div class="account-alert account-alert-success" role="status">@success</div>
+    }
+
+    <div class="account-welcome">
+        <div>
+            <span class="account-eyebrow">YOUR PRIVATE LIBRARY</span>
+            <h1>My account</h1>
+            <p>Welcome back, @(string.IsNullOrWhiteSpace(fullName) ? Model.User.UserName : fullName). Here is your library activity.</p>
+        </div>
+        <a class="account-primary-button" asp-action="EditProfile">Edit profile <span aria-hidden="true">→</span></a>
+    </div>
+
+    <div class="account-profile-card">
+        <div class="account-avatar" aria-hidden="true">@avatarLetter</div>
+        <div class="account-profile-main">
+            <h2>@(string.IsNullOrWhiteSpace(fullName) ? Model.User.UserName : fullName)</h2>
+            <p>@(Model.User.Email ?? "No email address added")</p>
+            <span class="account-member-since">Member since @Model.User.CreatedAt.ToLocalTime().ToString("MMMM yyyy")</span>
+        </div>
+        <a class="account-text-link" asp-action="EditProfile">Manage details</a>
+    </div>
+
+    <div class="account-stats-grid">
+        <a class="account-stat-card" asp-controller="Reservations" asp-action="Index">
+            <span class="account-stat-icon">▤</span><span class="account-stat-label">Active reservations</span>
+            <strong>@Model.ActiveReservationsCount</strong>
+        </a>
+        <a class="account-stat-card" asp-controller="Reservations" asp-action="Index">
+            <span class="account-stat-icon">↗</span><span class="account-stat-label">Active loans</span>
+            <strong>@Model.ActiveLoansCount</strong>
+        </a>
+        <a class="account-stat-card" href="#favorite-books">
+            <span class="account-stat-icon">♡</span><span class="account-stat-label">Favorite books</span>
+            <strong>@Model.FavoritesCount</strong>
+        </a>
+        <a class="account-stat-card" href="#my-reviews">
+            <span class="account-stat-icon">✎</span><span class="account-stat-label">My reviews</span>
+            <strong>@Model.ReviewsCount</strong>
+        </a>
+    </div>
+
+    <div class="account-content-grid">
+        <section class="account-section-card">
+            <div class="account-section-heading">
+                <div><span class="account-eyebrow">READING ACTIVITY</span><h2>Recent reservations</h2></div>
+                <a asp-controller="Reservations" asp-action="Index">View all</a>
+            </div>
+            @if (Model.RecentReservations.Count == 0)
+            {
+                <div class="account-empty"><span>▤</span><p>You have not reserved any books yet.</p><a asp-controller="Books" asp-action="Index">Explore the catalog</a></div>
+            }
+            else
+            {
+                <div class="account-list">
+                    @foreach (var reservation in Model.RecentReservations)
+                    {
+                        <div class="account-list-item">
+                            <div class="account-list-icon">▤</div>
+                            <div class="account-list-copy"><strong>@reservation.Book?.Title</strong><small>@reservation.ReservationDate.ToLocalTime().ToString("dd MMM yyyy")</small></div>
+                            <span class="account-status">@reservation.Status</span>
+                        </div>
+                    }
+                </div>
+            }
+        </section>
+
+        <section class="account-section-card" id="active-loans">
+            <div class="account-section-heading"><div><span class="account-eyebrow">CURRENTLY BORROWED</span><h2>Active loans</h2></div></div>
+            @if (Model.ActiveLoans.Count == 0)
+            {
+                <div class="account-empty"><span>⌂</span><p>You do not have any active loans.</p></div>
+            }
+            else
+            {
+                <div class="account-list">
+                    @foreach (var loan in Model.ActiveLoans)
+                    {
+                        <div class="account-list-item">
+                            <div class="account-list-icon">▣</div>
+                            <div class="account-list-copy"><strong>@loan.Copy?.Book?.Title</strong><small>Due @loan.DueDate.ToLocalTime().ToString("dd MMM yyyy")</small></div>
+                            <span class="account-status">Active</span>
+                        </div>
+                    }
+                </div>
+            }
+        </section>
+
+        <section class="account-section-card" id="favorite-books">
+            <div class="account-section-heading"><div><span class="account-eyebrow">YOUR COLLECTION</span><h2>Favorite books</h2></div><a asp-controller="Books" asp-action="Index">Browse catalog</a></div>
+            @if (Model.FavoriteBooks.Count == 0)
+            {
+                <div class="account-empty"><span>♡</span><p>Your favorite books will appear here.</p></div>
+            }
+            else
+            {
+                <div class="account-mini-books">
+                    @foreach (var favorite in Model.FavoriteBooks)
+                    {
+                        <a class="account-mini-book" asp-controller="Books" asp-action="Details" asp-route-id="@favorite.BookId">
+                            @if (!string.IsNullOrWhiteSpace(favorite.Book?.CoverImageUrl))
+                            {
+                                <img src="@favorite.Book.CoverImageUrl" alt="Cover of @favorite.Book.Title" />
+                            }
+                            else
+                            {
+                                <span class="account-mini-cover-placeholder">✧</span>
+                            }
+                            <strong>@favorite.Book?.Title</strong>
+                        </a>
+                    }
+                </div>
+            }
+        </section>
+
+        <section class="account-section-card" id="my-reviews">
+            <div class="account-section-heading"><div><span class="account-eyebrow">YOUR OPINIONS</span><h2>My reviews</h2></div></div>
+            @if (Model.RecentReviews.Count == 0)
+            {
+                <div class="account-empty"><span>✎</span><p>You have not written any reviews yet.</p></div>
+            }
+            else
+            {
+                <div class="account-list">
+                    @foreach (var review in Model.RecentReviews)
+                    {
+                        <div class="account-review-item">
+                            <div class="account-review-top"><strong>@review.Book?.Title</strong><span class="account-review-rating">@(new string('★', Math.Clamp((int)review.Rating, 0, 5)))</span></div>
+                            @if (!string.IsNullOrWhiteSpace(review.Comment)) { <p>@review.Comment</p> }
+                            <small>@review.CreatedAt.ToLocalTime().ToString("dd MMM yyyy") · @review.ModerationStatus</small>
+                        </div>
+                    }
+                </div>
+            }
+        </section>
+    </div>
+</section>

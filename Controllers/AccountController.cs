@@ -1,4 +1,7 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using PrivateLibrary.Data;
 using Microsoft.AspNetCore.Mvc;
 using PrivateLibrary.Models;
 using PrivateLibrary.ViewModels;
@@ -9,11 +12,107 @@ public class AccountController : Controller
 {
     private readonly UserManager<User> _userManager;
     private readonly SignInManager<User> _signInManager;
+    private readonly ApplicationDbContext _context;
 
-    public AccountController(UserManager<User> userManager, SignInManager<User> signInManager)
+    public AccountController(
+        UserManager<User> userManager,
+        SignInManager<User> signInManager,
+        ApplicationDbContext context)
     {
         _userManager = userManager;
         _signInManager = signInManager;
+        _context = context;
+    }
+
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> Index()
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user is null) return Challenge();
+
+        var activeReservationStatuses = new[] { "Pending", "Ready" };
+        var model = new AccountDashboardViewModel
+        {
+            User = user,
+            ActiveReservationsCount = await _context.Reservations.CountAsync(r =>
+                r.UserId == user.Id && activeReservationStatuses.Contains(r.Status)),
+            FavoritesCount = await _context.Favorites.CountAsync(f => f.UserId == user.Id),
+            ReviewsCount = await _context.Reviews.CountAsync(r => r.UserId == user.Id),
+            ActiveLoansCount = await _context.Loans.CountAsync(l =>
+                l.UserId == user.Id && l.ReturnDate == null && l.Status == "Active"),
+            RecentReservations = await _context.Reservations
+                .Where(r => r.UserId == user.Id)
+                .Include(r => r.Book)
+                .OrderByDescending(r => r.ReservationDate)
+                .Take(5)
+                .ToListAsync(),
+            FavoriteBooks = await _context.Favorites
+                .Where(f => f.UserId == user.Id)
+                .Include(f => f.Book)
+                .OrderByDescending(f => f.AddedAt)
+                .Take(4)
+                .ToListAsync(),
+            RecentReviews = await _context.Reviews
+                .Where(r => r.UserId == user.Id)
+                .Include(r => r.Book)
+                .OrderByDescending(r => r.CreatedAt)
+                .Take(4)
+                .ToListAsync(),
+            ActiveLoans = await _context.Loans
+                .Where(l => l.UserId == user.Id && l.ReturnDate == null && l.Status == "Active")
+                .Include(l => l.Copy)
+                .ThenInclude(c => c.Book)
+                .OrderBy(l => l.DueDate)
+                .Take(4)
+                .ToListAsync()
+        };
+
+        return View(model);
+    }
+
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> EditProfile()
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user is null) return Challenge();
+
+        return View(new EditProfileViewModel
+        {
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            PhoneNumber = user.PhoneNumber,
+            IsFavoritesPublic = user.IsFavoritesPublic
+        });
+    }
+
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditProfile(EditProfileViewModel model)
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user is null) return Challenge();
+        if (!ModelState.IsValid) return View(model);
+
+        user.FirstName = model.FirstName?.Trim() ?? string.Empty;
+        user.LastName = model.LastName?.Trim() ?? string.Empty;
+        user.PhoneNumber = string.IsNullOrWhiteSpace(model.PhoneNumber)
+            ? null
+            : model.PhoneNumber.Trim();
+        user.IsFavoritesPublic = model.IsFavoritesPublic;
+
+        var result = await _userManager.UpdateAsync(user);
+        if (!result.Succeeded)
+        {
+            foreach (var error in result.Errors)
+                ModelState.AddModelError(string.Empty, error.Description);
+            return View(model);
+        }
+
+        TempData["AccountSuccess"] = "Your profile has been updated.";
+        return RedirectToAction(nameof(Index));
     }
 
     [HttpGet]
@@ -43,7 +142,6 @@ public class AccountController : Controller
         {
             UserName = userName,
             Email = email,
-            // Profile details (first name, last name, and phone) can be added later.
             FirstName = string.Empty,
             LastName = string.Empty,
             CreatedAt = DateTime.UtcNow,
