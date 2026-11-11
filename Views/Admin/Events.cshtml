@@ -1,0 +1,67 @@
+@model List<PrivateLibrary.Models.Event>
+@{
+    ViewData["Title"] = "Event Moderation";
+}
+<div class="admin-shell">
+    <partial name="_AdminSidebar" />
+    <section class="admin-content">
+        <div class="admin-page-heading">
+            <div>
+                <span class="admin-eyebrow">CONTENT MODERATION</span>
+                <h1>Events</h1>
+                <p>Review community events submitted by library members.</p>
+            </div>
+        </div>
+
+        @if (TempData["AdminMessage"] is string message)
+        {
+            <div class="admin-alert">@message</div>
+        }
+
+        <section class="admin-panel">
+            <div class="admin-panel-heading">
+                <h2>All events (@Model.Count)</h2>
+                <span class="admin-muted">@Model.Count(e => e.ModerationStatus == "Pending") awaiting review</span>
+            </div>
+
+            @if (Model.Count == 0)
+            {
+                <div class="admin-empty">No events have been submitted.</div>
+            }
+            else
+            {
+                @foreach (var item in Model)
+                {
+                    <article class="admin-review-row">
+                        <div class="admin-moderation-entry">
+                            <strong>@item.Title</strong>
+                            <span>Organized by @item.Creator.UserName · @item.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, HH:mm")</span>
+                            <p>@(string.IsNullOrWhiteSpace(item.Description) ? "No description provided." : item.Description)</p>
+                            <div class="admin-event-meta">
+                                <span>Event date: @item.EventDate.ToLocalTime().ToString("dd MMM yyyy, HH:mm")</span>
+                                <span>Location: @(string.IsNullOrWhiteSpace(item.Location) ? "Not specified" : item.Location)</span>
+                                <span>Participants limit: @item.MaxParticipants</span>
+                                <span class="admin-status">Moderation: @item.ModerationStatus</span>
+                            </div>
+                        </div>
+                        @if (item.ModerationStatus == "Pending")
+                        {
+                            <div class="admin-decision-actions">
+                                <form asp-controller="Admin" asp-action="EventDecision" method="post">
+                                    <input type="hidden" name="id" value="@item.EventId" />
+                                    <input type="hidden" name="decision" value="Approved" />
+                                    <button class="admin-approve" type="submit">Approve</button>
+                                </form>
+                                <form asp-controller="Admin" asp-action="EventDecision" method="post">
+                                    <input type="hidden" name="id" value="@item.EventId" />
+                                    <input type="hidden" name="decision" value="Rejected" />
+                                    <button class="admin-reject" type="submit">Reject</button>
+                                </form>
+                            </div>
+                        }
+                    </article>
+                }
+            }
+        </section>
+    </section>
+</div>

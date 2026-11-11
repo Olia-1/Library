@@ -1,0 +1,54 @@
+@model List<PrivateLibrary.ViewModels.AdminUserViewModel>
+@{
+    ViewData["Title"] = "User Management";
+}
+<div class="admin-shell">
+    <partial name="_AdminSidebar" />
+    <section class="admin-content">
+        <div class="admin-page-heading">
+            <div>
+                <span class="admin-eyebrow">LIBRARY ACCOUNTS</span>
+                <h1>User Management</h1>
+                <p>Manage reader and staff accounts and assign library roles.</p>
+            </div>
+            <a class="admin-primary-button" asp-controller="Admin" asp-action="CreateUser">＋ Add User</a>
+        </div>
+
+        @if (TempData["AdminMessage"] is string message)
+        {
+            <div class="admin-alert">@message</div>
+        }
+
+        <section class="admin-panel">
+            <div class="admin-panel-heading">
+                <h2>All users (@Model.Count)</h2>
+                <span class="admin-muted">Readers, librarians and administrators</span>
+            </div>
+            @if (Model.Count == 0)
+            {
+                <div class="admin-empty">No user accounts were found.</div>
+            }
+            else
+            {
+                <div class="admin-table-wrap">
+                    <table class="admin-table">
+                        <thead>
+                            <tr><th>Username</th><th>Email</th><th>Role</th><th>User ID</th></tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var user in Model)
+                        {
+                            <tr>
+                                <td><strong>@user.UserName</strong></td>
+                                <td>@(string.IsNullOrWhiteSpace(user.Email) ? "Not provided" : user.Email)</td>
+                                <td><span class="admin-status">@user.Roles</span></td>
+                                <td>@user.Id</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+    </section>
+</div>

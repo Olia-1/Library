@@ -34,6 +34,10 @@
             <div class="nav-links" id="navLinks">
                 <a asp-controller="Books" asp-action="Index">Catalog</a>
                 <a asp-controller="Events" asp-action="Index">Events</a>
+                @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Admin"))
+                {
+                    <a class="nav-admin-link" asp-controller="Admin" asp-action="Index">Admin Panel</a>
+                }
                 <a asp-controller="Home" asp-action="Privacy">About</a>
             </div>
             <form class="nav-search" asp-controller="Books" asp-action="Index" method="get">

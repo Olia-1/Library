@@ -1,0 +1,33 @@
+@model PrivateLibrary.ViewModels.AdminModerationViewModel
+@{
+    ViewData["Title"] = "Moderation";
+}
+<div class="admin-shell">
+    <aside class="admin-sidebar">
+        <div class="admin-sidebar-title">Admin Panel</div>
+        <a class="admin-side-link" asp-action="Index">▦ Dashboard</a>
+        <a class="admin-side-link active" asp-action="Moderation">✎ Moderation</a>
+        <a class="admin-side-link" asp-action="Users">♙ Users</a>
+        <a class="admin-side-link" asp-controller="Books" asp-action="Index">▣ Catalog</a>
+    </aside>
+    <section class="admin-content">
+        <div class="admin-page-heading"><div><span class="admin-eyebrow">CONTENT REVIEW</span><h1>Moderation</h1><p>Review reader comments and community events before they become visible.</p></div><a class="admin-outline-button" asp-action="Index">← Dashboard</a></div>
+        @if (TempData["AdminMessage"] is string message) { <div class="admin-alert">@message</div> }
+        <section class="admin-panel">
+            <div class="admin-panel-heading"><h2>Comments awaiting moderation (@Model.PendingReviews.Count)</h2></div>
+            @if (Model.PendingReviews.Count == 0) { <div class="admin-empty">No comments to review.</div> }
+            @foreach (var review in Model.PendingReviews)
+            {
+                <article class="admin-review-row"><div><strong>@review.Book.Title</strong><span>by @review.User.UserName · @review.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, HH:mm")</span><p>@(string.IsNullOrWhiteSpace(review.Comment) ? $"Rating: {review.Rating}/5" : review.Comment)</p></div><div class="admin-decision-actions"><form asp-action="ReviewDecision" method="post"><input type="hidden" name="id" value="@review.ReviewId"/><input type="hidden" name="decision" value="Approved"/><button class="admin-approve">Approve</button></form><form asp-action="ReviewDecision" method="post"><input type="hidden" name="id" value="@review.ReviewId"/><input type="hidden" name="decision" value="Rejected"/><button class="admin-reject">Reject</button></form></div></article>
+            }
+        </section>
+        <section class="admin-panel admin-moderation-list-panel">
+            <div class="admin-panel-heading"><h2>Events awaiting moderation (@Model.PendingEvents.Count)</h2></div>
+            @if (Model.PendingEvents.Count == 0) { <div class="admin-empty">No events to review.</div> }
+            @foreach (var libraryEvent in Model.PendingEvents)
+            {
+                <article class="admin-review-row"><div><strong>@libraryEvent.Title</strong><span>by @libraryEvent.Creator.UserName · @libraryEvent.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, HH:mm")</span><p>@libraryEvent.Description</p></div><div class="admin-decision-actions"><form asp-action="EventDecision" method="post"><input type="hidden" name="id" value="@libraryEvent.EventId"/><input type="hidden" name="decision" value="Approved"/><button class="admin-approve">Approve</button></form><form asp-action="EventDecision" method="post"><input type="hidden" name="id" value="@libraryEvent.EventId"/><input type="hidden" name="decision" value="Rejected"/><button class="admin-reject">Reject</button></form></div></article>
+            }
+        </section>
+    </section>
+</div>

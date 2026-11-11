@@ -1,0 +1,14 @@
+@{
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+}
+<aside class="admin-sidebar">
+    <div class="admin-sidebar-title">Admin Panel</div>
+    <a class="admin-side-link @(currentAction == "Index" ? "active" : "")" asp-controller="Admin" asp-action="Index"><span>▦</span> Dashboard</a>
+    <div class="admin-side-heading" aria-hidden="true">Moderation</div>
+    <a class="admin-side-link @(currentAction == "Reviews" ? "active" : "")" asp-controller="Admin" asp-action="Reviews"><span>☆</span> Reviews &amp; Comments</a>
+    <a class="admin-side-link @(currentAction == "Events" ? "active" : "")" asp-controller="Admin" asp-action="Events"><span>✧</span> Events</a>
+    <a class="admin-side-link @(currentAction == "Users" || currentAction == "CreateUser" ? "active" : "")" asp-controller="Admin" asp-action="Users"><span>♙</span> Users</a>
+    <div class="admin-side-heading">Manage</div>
+    <a class="admin-side-link" asp-controller="Books" asp-action="Index"><span>▣</span> Books &amp; Catalog</a>
+    <a class="admin-side-link" asp-controller="Reservations" asp-action="Index"><span>▧</span> Reservations</a>
+</aside>

@@ -1,0 +1,62 @@
+@model PrivateLibrary.ViewModels.AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Administrator Dashboard";
+}
+<div class="admin-shell">
+    <partial name="_AdminSidebar" />
+    <section class="admin-content">
+        <div class="admin-page-heading">
+            <div>
+                <span class="admin-eyebrow">PRIVATE LIBRARY MANAGEMENT</span>
+                <h1>Administrator Dashboard</h1>
+                <p>Overview of the library system and recent activity.</p>
+            </div>
+            <span class="admin-role-pill">Administrator</span>
+        </div>
+
+        <div class="admin-stat-grid" id="overview">
+            <article class="admin-stat-card"><span class="admin-stat-icon">♙</span><div><strong>@Model.TotalUsers</strong><span>Total users</span></div></article>
+            <article class="admin-stat-card"><span class="admin-stat-icon">▣</span><div><strong>@Model.TotalBooks</strong><span>Books in catalog</span></div></article>
+            <article class="admin-stat-card"><span class="admin-stat-icon">▤</span><div><strong>@Model.TotalCopies</strong><span>Book copies</span></div></article>
+            <article class="admin-stat-card"><span class="admin-stat-icon">▱</span><div><strong>@Model.ActiveLoans</strong><span>Active loans</span></div></article>
+        </div>
+
+        <div class="admin-main-grid">
+            <section class="admin-panel admin-activity-panel" id="activity">
+                <div class="admin-panel-heading"><h2>Recent Activity</h2><span class="admin-muted">Latest records</span></div>
+                @if (Model.RecentActivities.Count == 0)
+                {
+                    <div class="admin-empty">No recent activity yet.</div>
+                }
+                else
+                {
+                    <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Date and Time</th><th>Type</th><th>Description</th><th>User</th><th>Status</th></tr></thead><tbody>
+                    @foreach (var item in Model.RecentActivities)
+                    {
+                        <tr><td>@item.Date.ToLocalTime().ToString("dd MMM yyyy, HH:mm")</td><td>@item.Type</td><td>@item.Description</td><td>@item.UserName</td><td><span class="admin-status">@item.Status</span></td></tr>
+                    }
+                    </tbody></table></div>
+                }
+            </section>
+
+            <section class="admin-panel admin-moderation-panel" id="moderation">
+                <div class="admin-panel-heading"><h2>Items for Moderation</h2><a asp-action="Reviews">View reviews →</a></div>
+                <div class="admin-moderation-counts"><span>Reviews (@Model.PendingReviews)</span><span>Events (@Model.PendingEvents)</span></div>
+                @foreach (var item in Model.PendingReviewItems)
+                {
+                    <article class="admin-moderation-item"><div class="admin-item-symbol">✎</div><div class="admin-item-info"><strong>@item.Title</strong><span>by @item.CreatedBy</span><small>@item.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, HH:mm")</small></div><a class="admin-small-action" asp-action="Reviews">Review</a></article>
+                }
+                @foreach (var item in Model.PendingEventItems)
+                {
+                    <article class="admin-moderation-item"><div class="admin-item-symbol">✧</div><div class="admin-item-info"><strong>@item.Title</strong><span>by @item.CreatedBy</span><small>@item.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, HH:mm")</small></div><a class="admin-small-action" asp-action="Events">Review</a></article>
+                }
+                @if (Model.PendingReviewItems.Count == 0 && Model.PendingEventItems.Count == 0)
+                {
+                    <div class="admin-empty">There are no items waiting for moderation.</div>
+                }
+            </section>
+        </div>
+
+
+    </section>
+</div>
