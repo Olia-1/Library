@@ -78,6 +78,7 @@ public class BooksController : Controller
             .Include(b => b.Genre)
             .Include(b => b.BookAuthors).ThenInclude(ba => ba.Author)
             .Include(b => b.Copies)
+            .Include(b => b.Reviews).ThenInclude(r => r.User)
             .FirstOrDefaultAsync(b => b.BookId == id);
 
         return book is null ? NotFound() : View(book);

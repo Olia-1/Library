@@ -1,30 +1,158 @@
 @model Book
 @{
     ViewData["Title"] = Model.Title;
+    var authors = Model.BookAuthors
+        .Select(x => $"{x.Author?.FirstName} {x.Author?.LastName}".Trim())
+        .Where(x => !string.IsNullOrWhiteSpace(x))
+        .ToList();
+    var availableCopies = Model.Copies.Count(c =>
+        string.Equals(c.Status, "Available", StringComparison.OrdinalIgnoreCase));
+    var approvedReviews = Model.Reviews
+        .Where(r => string.Equals(r.ModerationStatus, "Approved", StringComparison.OrdinalIgnoreCase))
+        .OrderByDescending(r => r.CreatedAt)
+        .ToList();
+    var averageRating = approvedReviews.Count > 0 ? approvedReviews.Average(r => r.Rating) : 0;
 }
-@if (TempData["Error"] is string error)
-{
-    <div class="alert alert-danger">@error</div>
-}
-@if (TempData["Success"] is string success)
-{
-    <div class="alert alert-success">@success</div>
-}
-<h1>@Model.Title</h1>
-<p><strong>Description:</strong> @Model.Description</p>
-<p><strong>Publication year:</strong> @Model.PublicationYear</p>
-<p><strong>Genre:</strong> @Model.Genre?.Name</p>
-<p><strong>Authors:</strong> @string.Join(", ", Model.BookAuthors.Select(x => $"{x.Author?.FirstName} {x.Author?.LastName}"))</p>
-<p><strong>Available copies:</strong> @Model.Copies.Count(c => c.Status == "Available")</p>
-<p>You can reserve this book even when no copies are currently available, subject to the reservation rules.</p>
-@if (User.Identity?.IsAuthenticated == true && User.IsInRole("Reader"))
-{
-    <form asp-controller="Reservations" asp-action="Create" method="post">
-        <input type="hidden" name="bookId" value="@Model.BookId" />
-        <button type="submit" class="btn btn-primary">Reserve this book</button>
-    </form>
-}
-else if (User.Identity?.IsAuthenticated != true)
-{
-    <p><a asp-controller="Account" asp-action="Login">Sign in</a> to reserve this book.</p>
-}
+<section class="book-details-page">
+    <a asp-controller="Books" asp-action="Index" class="details-back-link">
+        <span aria-hidden="true">←</span> Back to catalog
+    </a>
+
+    @if (TempData["Error"] is string error)
+    {
+        <div class="alert alert-danger details-alert">@error</div>
+    }
+    @if (TempData["Success"] is string success)
+    {
+        <div class="alert alert-success details-alert">@success</div>
+    }
+
+    <div class="book-details-card">
+        <div class="details-cover-column">
+            <div class="details-cover">
+                @if (!string.IsNullOrWhiteSpace(Model.CoverImageUrl))
+                {
+                    <img src="@Model.CoverImageUrl" alt="Cover of @Model.Title" />
+                }
+                else
+                {
+                    <div class="details-cover-placeholder">
+                        <span class="details-cover-mark">✦</span>
+                        <span class="details-cover-title">@Model.Title</span>
+                        <span class="details-cover-author">@(authors.Count > 0 ? string.Join(", ", authors) : "Private Library Collection")</span>
+                    </div>
+                }
+            </div>
+            <div class="details-stock @(availableCopies > 0 ? "stock-available" : "stock-unavailable")">
+                <span class="stock-indicator"></span>
+                <span>
+                    <strong>@(availableCopies > 0 ? "Available to borrow" : "Currently unavailable")</strong>
+                    <small>@availableCopies @(availableCopies == 1 ? "copy" : "copies") available</small>
+                </span>
+            </div>
+            @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Reader"))
+            {
+                <form asp-controller="Reservations" asp-action="Create" method="post" class="details-reserve-form">
+                    <input type="hidden" name="bookId" value="@Model.BookId" />
+                    <button type="submit" class="details-reserve-button">Reserve this book <span>→</span></button>
+                </form>
+                <p class="details-reserve-note">You can place a reservation even when all copies are currently borrowed, subject to library rules.</p>
+            }
+            else if (User.Identity?.IsAuthenticated != true)
+            {
+                <a asp-controller="Account" asp-action="Login" class="details-reserve-button">Sign in to reserve <span>→</span></a>
+                <p class="details-reserve-note">Sign in with your reader account to reserve this title.</p>
+            }
+        </div>
+
+        <div class="details-content">
+            <div class="details-kicker">THE PRIVATE LIBRARY COLLECTION</div>
+            @if (Model.Genre is not null)
+            {
+                <span class="details-genre">@Model.Genre.Name</span>
+            }
+            <h1>@Model.Title</h1>
+            <p class="details-author">by @(authors.Count > 0 ? string.Join(", ", authors) : "Unknown author")</p>
+
+            <div class="details-rating-row">
+                @if (approvedReviews.Count > 0)
+                {
+                    <span class="details-stars" aria-label="@averageRating.ToString("0.0") out of 5 stars">
+                        @for (var i = 1; i <= 5; i++)
+                        {
+                            <span class="@(i <= Math.Round(averageRating) ? "star-filled" : "star-empty")">★</span>
+                        }
+                    </span>
+                    <strong>@averageRating.ToString("0.0")</strong>
+                    <span class="details-review-count">(@approvedReviews.Count @(approvedReviews.Count == 1 ? "review" : "reviews"))</span>
+                }
+                else
+                {
+                    <span class="details-no-rating">No reviews yet</span>
+                }
+            </div>
+
+            <div class="details-divider"></div>
+            <h2>About this book</h2>
+            <p class="details-description">
+                @(string.IsNullOrWhiteSpace(Model.Description)
+                    ? "A description for this title has not been added yet. Explore the book details below or contact the library for more information."
+                    : Model.Description)
+            </p>
+
+            <h2 class="details-info-heading">Book information</h2>
+            <dl class="details-meta-grid">
+                <div><dt>Publication year</dt><dd>@(Model.PublicationYear?.ToString() ?? "Not specified")</dd></div>
+                <div><dt>Publisher</dt><dd>@(string.IsNullOrWhiteSpace(Model.Publisher) ? "Not specified" : Model.Publisher)</dd></div>
+                <div><dt>Language</dt><dd>@(string.IsNullOrWhiteSpace(Model.Language) ? "Not specified" : Model.Language)</dd></div>
+                <div><dt>ISBN</dt><dd>@(string.IsNullOrWhiteSpace(Model.ISBN) ? "Not specified" : Model.ISBN)</dd></div>
+                <div><dt>Genre</dt><dd>@(Model.Genre?.Name ?? "Not specified")</dd></div>
+                <div><dt>Library copies</dt><dd>@Model.Copies.Count</dd></div>
+            </dl>
+        </div>
+    </div>
+
+    <section class="details-reviews-section">
+        <div class="details-section-heading">
+            <div>
+                <span class="details-kicker">READERS' OPINIONS</span>
+                <h2>Reader reviews</h2>
+            </div>
+            <span class="details-review-total">@approvedReviews.Count @(approvedReviews.Count == 1 ? "review" : "reviews")</span>
+        </div>
+        @if (approvedReviews.Count == 0)
+        {
+            <div class="details-empty-reviews">
+                <span>✧</span>
+                <div><strong>Be the first to share your thoughts</strong><p>There are no published reviews for this book yet.</p></div>
+            </div>
+        }
+        else
+        {
+            <div class="details-review-list">
+                @foreach (var review in approvedReviews)
+                {
+                    <article class="details-review">
+                        <div class="review-avatar">@(review.User?.FirstName?.FirstOrDefault().ToString().ToUpperInvariant() ?? "R")</div>
+                        <div class="review-main">
+                            <div class="review-topline">
+                                <strong>@(string.IsNullOrWhiteSpace(review.User?.FirstName) ? "Library reader" : review.User.FirstName)</strong>
+                                <time datetime="@review.CreatedAt.ToString("yyyy-MM-dd")">@review.CreatedAt.ToString("MMM dd, yyyy")</time>
+                            </div>
+                            <div class="review-stars" aria-label="@review.Rating out of 5 stars">
+                                @for (var i = 1; i <= 5; i++)
+                                {
+                                    <span class="@(i <= review.Rating ? "star-filled" : "star-empty")">★</span>
+                                }
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(review.Comment))
+                            {
+                                <p>@review.Comment</p>
+                            }
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    </section>
+</section>
