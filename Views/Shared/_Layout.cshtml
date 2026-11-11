@@ -48,7 +48,7 @@
             @if (User.Identity?.IsAuthenticated == true)
             {
                 <div class="nav-user">
-                    <span class="user-greeting">Hello, @User.Identity.Name</span>
+                    <a class="user-greeting" asp-controller="Account" asp-action="Index">Account: @User.Identity.Name</a>
                     <form asp-controller="Account" asp-action="Logout" method="post">
                         <button class="nav-signin" type="submit">Log out</button>
                     </form>
