@@ -1,3 +1,5 @@
+@model IEnumerable<PrivateLibrary.Models.Book>
+
 @{
     ViewData["Title"] = "Home";
 }
@@ -47,27 +49,53 @@
 
     <section class="popular-section">
         <div class="section-heading">
-            <div><span class="eyebrow">HAND-PICKED FOR YOU</span><h2>Popular Books</h2></div>
+            <div><span class="eyebrow">READY TO BORROW</span><h2>Available Books</h2></div>
             <a asp-controller="Books" asp-action="Index" class="text-link">View all <span>→</span></a>
         </div>
-        <div class="book-grid">
-            <article class="book-card">
-                <div class="book-cover"><img src="https://covers.openlibrary.org/b/isbn/9780441172719-L.jpg" alt="Dune book cover" loading="lazy" /><button class="favorite-toggle" type="button" aria-label="Add Dune to favorites" aria-pressed="false">♡</button></div>
-                <div class="book-info"><h3>Dune</h3><p>Frank Herbert</p><div class="book-rating"><span>★</span> 4.8 <small>(320)</small></div><span class="genre-pill">Science Fiction</span></div>
-            </article>
-            <article class="book-card">
-                <div class="book-cover"><img src="https://covers.openlibrary.org/b/isbn/9780451524935-L.jpg" alt="1984 book cover" loading="lazy" /><button class="favorite-toggle" type="button" aria-label="Add 1984 to favorites" aria-pressed="false">♡</button></div>
-                <div class="book-info"><h3>1984</h3><p>George Orwell</p><div class="book-rating"><span>★</span> 4.7 <small>(215)</small></div><span class="genre-pill">Dystopian</span></div>
-            </article>
-            <article class="book-card">
-                <div class="book-cover"><img src="https://covers.openlibrary.org/b/isbn/9780316556347-L.jpg" alt="The Midnight Library book cover" loading="lazy" /><button class="favorite-toggle" type="button" aria-label="Add The Midnight Library to favorites" aria-pressed="false">♡</button></div>
-                <div class="book-info"><h3>The Midnight Library</h3><p>Matt Haig</p><div class="book-rating"><span>★</span> 4.6 <small>(189)</small></div><span class="genre-pill">Fiction</span></div>
-            </article>
-            <article class="book-card">
-                <div class="book-cover"><img src="https://covers.openlibrary.org/b/isbn/9780547928227-L.jpg" alt="The Hobbit book cover" loading="lazy" /><button class="favorite-toggle" type="button" aria-label="Add The Hobbit to favorites" aria-pressed="false">♡</button></div>
-                <div class="book-info"><h3>The Hobbit</h3><p>J.R.R. Tolkien</p><div class="book-rating"><span>★</span> 4.5 <small>(142)</small></div><span class="genre-pill">Fantasy</span></div>
-            </article>
-        </div>
+
+        @if (Model == null || !Model.Any())
+        {
+            <div class="home-books-empty">
+                <h3>No books are currently available</h3>
+                <p>Please check the catalog again later.</p>
+                <a asp-controller="Books" asp-action="Index" class="text-link">Explore the catalog →</a>
+            </div>
+        }
+        else
+        {
+            <div class="book-grid">
+                @foreach (var book in Model)
+                {
+                    var authors = string.Join(", ", book.BookAuthors
+                        .Select(x => $"{x.Author?.FirstName} {x.Author?.LastName}".Trim())
+                        .Where(x => !string.IsNullOrWhiteSpace(x)));
+                    var availableCopies = book.Copies.Count(copy => copy.Status == "Available");
+                    <a class="home-book-link" asp-controller="Books" asp-action="Details" asp-route-id="@book.BookId" aria-label="View details for @book.Title">
+                        <article class="book-card home-book-card">
+                            <div class="book-cover">
+                                @if (!string.IsNullOrWhiteSpace(book.CoverImageUrl))
+                                {
+                                    <img src="@book.CoverImageUrl" alt="Cover of @book.Title" loading="lazy" />
+                                }
+                                else
+                                {
+                                    <div class="home-book-no-cover" aria-label="No cover available">📖</div>
+                                }
+                            </div>
+                            <div class="book-info">
+                                <h3>@book.Title</h3>
+                                <p>@(string.IsNullOrWhiteSpace(authors) ? "Unknown author" : authors)</p>
+                                <span class="home-availability">@availableCopies @(availableCopies == 1 ? "copy" : "copies") available</span>
+                                @if (book.Genre != null)
+                                {
+                                    <span class="genre-pill">@book.Genre.Name</span>
+                                }
+                            </div>
+                        </article>
+                    </a>
+                }
+            </div>
+        }
     </section>
 
     <section class="promo-grid" id="events">

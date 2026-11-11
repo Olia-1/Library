@@ -1,0 +1,78 @@
+@model EventDetailsViewModel
+@{
+    ViewData["Title"] = Model.Title;
+    var full = Model.AvailablePlaces == 0;
+    var past = Model.EventDate <= DateTime.Now;
+}
+<section class="events-page event-details-page">
+    <a class="events-back-link" asp-action="Index">← Back to events</a>
+    @if (TempData["EventMessage"] is string successMessage)
+    {
+        <div class="events-alert success">@successMessage</div>
+    }
+    @if (Context.Request.Query["message"] == "full")
+    {
+        <div class="events-alert">Sorry, all places for this event have been booked.</div>
+    }
+    else if (Context.Request.Query["message"] == "closed")
+    {
+        <div class="events-alert">Registration for this event is closed.</div>
+    }
+    else if (Context.Request.Query["message"] == "already")
+    {
+        <div class="events-alert">You are already registered for this event.</div>
+    }
+
+    <article class="event-detail-card">
+        <div class="event-detail-heading">
+            <span class="events-eyebrow">PRIVATE LIBRARY EVENT</span>
+            <h1>@Model.Title</h1>
+            <p>@Model.Description</p>
+        </div>
+        <div class="event-detail-facts">
+            <div><span>DATE & TIME</span><strong>@Model.EventDate.ToString("dddd, dd MMMM yyyy · HH:mm")</strong></div>
+            <div><span>LOCATION</span><strong>@(string.IsNullOrWhiteSpace(Model.Location) ? "To be announced" : Model.Location)</strong></div>
+            <div><span>PARTICIPANTS</span><strong>@Model.RegisteredCount / @Model.MaxParticipants</strong></div>
+            <div><span>AVAILABLE PLACES</span><strong>@Model.AvailablePlaces</strong></div>
+        </div>
+        @if (Model.IsOrganizer && Model.ModerationStatus != "Approved")
+        {
+            <div class="events-alert">Your event is awaiting moderation. Readers will be able to register after it is approved.</div>
+        }
+        <div class="event-detail-actions">
+            @if (Model.IsOrganizer)
+            {
+                <span class="event-registered-label">You are the organizer of this event</span>
+                @if (Model.ModerationStatus != "Approved")
+                {
+                    <span class="event-availability">Moderation: @Model.ModerationStatus</span>
+                }
+            }
+            else if (Model.IsRegistered)
+            {
+                <span class="event-registered-label">✓ You are registered for this event</span>
+                <form asp-action="Cancel" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.EventId" />
+                    <button class="event-button secondary" type="submit" onclick="return confirm('Cancel your registration?')">Cancel registration</button>
+                </form>
+            }
+            else if (User.Identity?.IsAuthenticated != true)
+            {
+                <a class="event-button" asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Url.Action("Details", "Events", new { id = Model.EventId })">Log in to register</a>
+            }
+            else if (!past && !full)
+            {
+                <form asp-action="Join" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.EventId" />
+                    <button class="event-button" type="submit">Register for event</button>
+                </form>
+            }
+            else
+            {
+                <span class="event-availability full">@(past ? "This event has ended" : "Registration is full")</span>
+            }
+        </div>
+    </article>
+</section>

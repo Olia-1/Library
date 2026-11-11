@@ -1,0 +1,82 @@
+@model EventsIndexViewModel
+@{
+    ViewData["Title"] = "Events";
+}
+<section class="events-page">
+    <div class="events-hero">
+        <span class="events-eyebrow">PRIVATE LIBRARY COMMUNITY</span>
+        <h1>Library Events</h1>
+        <p>Discover book clubs, creative workshops and special gatherings. Find your next moment of inspiration.</p>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <div class="events-hero-actions">
+                <a class="events-my-link" asp-action="MyEvents">Events <span>→</span></a>
+                <button class="events-create-button" type="button" title="Event creation will be available soon">Create event <span aria-hidden="true">＋</span></button>
+            </div>
+        }
+    </div>
+
+    <div class="events-toolbar">
+        <div>
+            <span class="events-eyebrow">EXPLORE</span>
+            <h2>@(Model.Filter == "past" ? "Past events" : "Upcoming events")</h2>
+        </div>
+        <div class="events-filters">
+            <a class="@(Model.Filter != "past" ? "active" : "")" asp-action="Index" asp-route-filter="upcoming">Upcoming</a>
+            <a class="@(Model.Filter == "past" ? "active" : "")" asp-action="Index" asp-route-filter="past">Past events</a>
+        </div>
+    </div>
+
+    @if (Model.Events.Count == 0)
+    {
+        <div class="events-empty">
+            <span>✦</span>
+            <h3>No events found</h3>
+            <p>@(Model.Filter == "past" ? "There are no past events to display." : "There are no upcoming events at the moment. Please check again later.")</p>
+        </div>
+    }
+    else
+    {
+        <div class="events-grid">
+            @foreach (var item in Model.Events)
+            {
+                var full = item.AvailablePlaces == 0;
+                <article class="event-card">
+                    <div class="event-date-tile">
+                        <span>@item.EventDate.ToString("MMM")</span>
+                        <strong>@item.EventDate.ToString("dd")</strong>
+                        <small>@item.EventDate.ToString("yyyy")</small>
+                    </div>
+                    <div class="event-card-body">
+                        <div class="event-card-meta">
+                            <span>◷ @item.EventDate.ToString("HH:mm")</span>
+                            @if (!string.IsNullOrWhiteSpace(item.Location))
+                            {
+                                <span>⌖ @item.Location</span>
+                            }
+                        </div>
+                        <h3>@item.Title</h3>
+                        @if (item.IsOrganizer)
+                        {
+                            <span class="event-registered-label">Your event</span>
+                            @if (item.ModerationStatus != "Approved")
+                            {
+                                <span class="event-availability">Moderation: @item.ModerationStatus</span>
+                            }
+                        }
+                        <p>@(string.IsNullOrWhiteSpace(item.Description) ? "Join the library community for this special event." : item.Description)</p>
+                        <div class="event-card-bottom">
+                            <span class="event-capacity">@item.RegisteredCount / @item.MaxParticipants participants</span>
+                            <span class="event-availability @(full ? "full" : "")">@(full ? "Fully booked" : $"{item.AvailablePlaces} places left")</span>
+                        </div>
+                        <a class="event-details-link" asp-action="Details" asp-route-id="@item.EventId">View details <span>→</span></a>
+                        @if (item.IsRegistered)
+                        {
+                            <span class="event-registered-label">✓ You are registered</span>
+                        }
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</section>

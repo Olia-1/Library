@@ -41,6 +41,15 @@ public class AccountController : Controller
             ReviewsCount = await _context.Reviews.CountAsync(r => r.UserId == user.Id),
             ActiveLoansCount = await _context.Loans.CountAsync(l =>
                 l.UserId == user.Id && l.ReturnDate == null && l.Status == "Active"),
+            EventsCount = await _context.EventParticipants.CountAsync(ep =>
+                ep.UserId == user.Id && ep.Status == "Registered" && ep.Event.EventDate >= DateTime.UtcNow),
+            UnreadNotificationsCount = await _context.Notifications.CountAsync(n =>
+                n.UserId == user.Id && !n.IsRead),
+            ActiveSubscription = await _context.Subscriptions
+                .Where(s => s.UserId == user.Id && s.Status == "Active" && s.EndDate > DateTime.UtcNow)
+                .Include(s => s.MembershipPlan)
+                .OrderByDescending(s => s.EndDate)
+                .FirstOrDefaultAsync(),
             RecentReservations = await _context.Reservations
                 .Where(r => r.UserId == user.Id)
                 .Include(r => r.Book)
@@ -64,6 +73,17 @@ public class AccountController : Controller
                 .Include(l => l.Copy)
                 .ThenInclude(c => c.Book)
                 .OrderBy(l => l.DueDate)
+                .Take(4)
+                .ToListAsync(),
+            UpcomingEvents = await _context.EventParticipants
+                .Where(ep => ep.UserId == user.Id && ep.Status == "Registered" && ep.Event.EventDate >= DateTime.UtcNow)
+                .Include(ep => ep.Event)
+                .OrderBy(ep => ep.Event.EventDate)
+                .Take(4)
+                .ToListAsync(),
+            RecentNotifications = await _context.Notifications
+                .Where(n => n.UserId == user.Id)
+                .OrderByDescending(n => n.CreatedAt)
                 .Take(4)
                 .ToListAsync()
         };
