@@ -39,6 +39,7 @@ public class AccountController : Controller
                 r.UserId == user.Id && activeReservationStatuses.Contains(r.Status)),
             FavoritesCount = await _context.Favorites.CountAsync(f => f.UserId == user.Id),
             ReviewsCount = await _context.Reviews.CountAsync(r => r.UserId == user.Id),
+            RatingsCount = await _context.Ratings.CountAsync(r => r.UserId == user.Id),
             ActiveLoansCount = await _context.Loans.CountAsync(l =>
                 l.UserId == user.Id && l.ReturnDate == null && l.Status == "Active"),
             EventsCount = await _context.EventParticipants.CountAsync(ep =>
@@ -63,6 +64,12 @@ public class AccountController : Controller
                 .Take(4)
                 .ToListAsync(),
             RecentReviews = await _context.Reviews
+                .Where(r => r.UserId == user.Id)
+                .Include(r => r.Book)
+                .OrderByDescending(r => r.CreatedAt)
+                .Take(4)
+                .ToListAsync(),
+            RecentRatings = await _context.Ratings
                 .Where(r => r.UserId == user.Id)
                 .Include(r => r.Book)
                 .OrderByDescending(r => r.CreatedAt)

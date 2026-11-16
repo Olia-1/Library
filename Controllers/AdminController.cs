@@ -33,6 +33,7 @@ public class AdminController : Controller
             TotalCopies = await _context.BookCopies.CountAsync(),
             ActiveLoans = await _context.Loans.CountAsync(l => l.Status == "Active" && l.ReturnDate == null),
             PendingReviews = await _context.Reviews.CountAsync(r => r.ModerationStatus == "Pending"),
+            PendingRatings = await _context.Ratings.CountAsync(r => r.ModerationStatus == "Pending"),
             PendingEvents = await _context.Events.CountAsync(e => e.ModerationStatus == "Pending"),
             PendingReservations = await _context.Reservations.CountAsync(r => r.Status == "Pending")
         };
@@ -57,7 +58,7 @@ public class AdminController : Controller
         model.PendingReviewItems = await _context.Reviews.AsNoTracking()
             .Where(r => r.ModerationStatus == "Pending").Include(r => r.User).Include(r => r.Book)
             .OrderByDescending(r => r.CreatedAt).Take(3)
-            .Select(r => new AdminModerationItemViewModel { Id = r.ReviewId, Type = "Review", Title = $"Review on \"{r.Book.Title}\"", CreatedBy = r.User.UserName ?? "Unknown", CreatedAt = r.CreatedAt, Description = r.Comment ?? $"Rating: {r.Rating}/5" })
+            .Select(r => new AdminModerationItemViewModel { Id = r.ReviewId, Type = "Review", Title = $"Review on \"{r.Book.Title}\"", CreatedBy = r.User.UserName ?? "Unknown", CreatedAt = r.CreatedAt, Description = r.Text })
             .ToListAsync();
         model.PendingEventItems = await _context.Events.AsNoTracking()
             .Where(e => e.ModerationStatus == "Pending").Include(e => e.Creator)
@@ -189,7 +190,7 @@ public class AdminController : Controller
     }
 
     [HttpGet]
-    public IActionResult Moderation() => RedirectToAction(nameof(Reviews));
+    public IActionResult Moderation() => View();
 
     [HttpGet]
     public async Task<IActionResult> Reviews()
@@ -197,6 +198,36 @@ public class AdminController : Controller
         var reviews = await _context.Reviews.AsNoTracking().Include(r => r.User).Include(r => r.Book)
             .OrderByDescending(r => r.CreatedAt).ToListAsync();
         return View(reviews);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Ratings()
+    {
+        var ratings = await _context.Ratings.AsNoTracking()
+            .Include(r => r.User).Include(r => r.Book)
+            .OrderByDescending(r => r.CreatedAt).ToListAsync();
+        return View(ratings);
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> RatingDecision(int id, string decision)
+    {
+        if (decision is not ("Approved" or "Rejected")) return BadRequest();
+        var rating = await _context.Ratings
+            .Include(r => r.User)
+            .Include(r => r.Book)
+            .FirstOrDefaultAsync(r => r.RatingId == id);
+        if (rating == null) return NotFound();
+
+        rating.ModerationStatus = decision;
+        await _context.SaveChangesAsync();
+
+        var author = !string.IsNullOrWhiteSpace(rating.User.FirstName)
+            ? rating.User.FirstName
+            : rating.User.UserName ?? "A reader";
+        var result = decision == "Approved" ? "was approved" : "was not approved";
+        TempData["AdminMessage"] = $"Rating by {author} for “{rating.Book.Title}” {result}.";
+        return RedirectToAction(nameof(Ratings));
     }
 
     [HttpGet]
@@ -211,11 +242,20 @@ public class AdminController : Controller
     public async Task<IActionResult> ReviewDecision(int id, string decision)
     {
         if (decision is not ("Approved" or "Rejected")) return BadRequest();
-        var review = await _context.Reviews.FindAsync(id);
+        var review = await _context.Reviews
+            .Include(r => r.User)
+            .Include(r => r.Book)
+            .FirstOrDefaultAsync(r => r.ReviewId == id);
         if (review == null) return NotFound();
+
         review.ModerationStatus = decision;
         await _context.SaveChangesAsync();
-        TempData["AdminMessage"] = $"Review {decision.ToLowerInvariant()}.";
+
+        var author = !string.IsNullOrWhiteSpace(review.User.FirstName)
+            ? review.User.FirstName
+            : review.User.UserName ?? "A reader";
+        var result = decision == "Approved" ? "was approved" : "was not approved";
+        TempData["AdminMessage"] = $"Review by {author} for “{review.Book.Title}” {result}.";
         return RedirectToAction(nameof(Reviews));
     }
 

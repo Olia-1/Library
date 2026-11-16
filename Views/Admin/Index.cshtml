@@ -40,8 +40,8 @@
             </section>
 
             <section class="admin-panel admin-moderation-panel" id="moderation">
-                <div class="admin-panel-heading"><h2>Items for Moderation</h2><a asp-action="Reviews">View reviews →</a></div>
-                <div class="admin-moderation-counts"><span>Reviews (@Model.PendingReviews)</span><span>Events (@Model.PendingEvents)</span></div>
+                <div class="admin-panel-heading"><h2>Items for Moderation</h2><a asp-action="Moderation">View moderation →</a></div>
+                <div class="admin-moderation-counts"><a asp-action="Ratings">Ratings (@Model.PendingRatings)</a><a asp-action="Reviews">Reviews (@Model.PendingReviews)</a><a asp-action="Events">Events (@Model.PendingEvents)</a></div>
                 @foreach (var item in Model.PendingReviewItems)
                 {
                     <article class="admin-moderation-item"><div class="admin-item-symbol">✎</div><div class="admin-item-info"><strong>@item.Title</strong><span>by @item.CreatedBy</span><small>@item.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, HH:mm")</small></div><a class="admin-small-action" asp-action="Reviews">Review</a></article>
@@ -50,7 +50,7 @@
                 {
                     <article class="admin-moderation-item"><div class="admin-item-symbol">✧</div><div class="admin-item-info"><strong>@item.Title</strong><span>by @item.CreatedBy</span><small>@item.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, HH:mm")</small></div><a class="admin-small-action" asp-action="Events">Review</a></article>
                 }
-                @if (Model.PendingReviewItems.Count == 0 && Model.PendingEventItems.Count == 0)
+                @if (Model.PendingReviewItems.Count == 0 && Model.PendingEventItems.Count == 0 && Model.PendingRatings == 0)
                 {
                     <div class="admin-empty">There are no items waiting for moderation.</div>
                 }

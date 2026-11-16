@@ -101,8 +101,22 @@
         </div>
     </div>
 </dialog>
+@{
+    var siteToastMessage = TempData["Success"] as string
+        ?? TempData["Error"] as string
+        ?? TempData["AdminMessage"] as string
+        ?? TempData["AdminError"] as string;
+    var siteToastType = (TempData.ContainsKey("Error") || TempData.ContainsKey("AdminError")) ? "error" : "success";
+}
+@if (!string.IsNullOrWhiteSpace(siteToastMessage))
+{
+    <div data-site-toast-autoshow="true"
+         data-site-toast-message="@siteToastMessage"
+         data-site-toast-type="@siteToastType"
+         hidden></div>
+}
 <div class="site-toast" id="siteToast" role="status" aria-live="polite" hidden>
-    <span class="site-toast-mark" aria-hidden="true">✓</span>
+    <span class="site-toast-mark" id="siteToastMark" aria-hidden="true">✓</span>
     <span id="siteToastMessage"></span>
 </div>
 <script src="~/lib/jquery/dist/jquery.min.js"></script>

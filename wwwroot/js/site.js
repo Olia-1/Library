@@ -242,15 +242,22 @@ document.addEventListener("DOMContentLoaded", () => {
     const siteToastMessage = document.getElementById("siteToastMessage");
 
     if (autoToast && siteToast && siteToastMessage) {
+        const toastType = autoToast.dataset.siteToastType || "success";
+        const toastMark = document.getElementById("siteToastMark");
+
         siteToastMessage.textContent = autoToast.dataset.siteToastMessage || "Your changes have been saved.";
+        siteToast.classList.toggle("site-toast-error", toastType === "error");
+        siteToast.classList.toggle("site-toast-success", toastType !== "error");
+        if (toastMark) toastMark.textContent = toastType === "error" ? "!" : "✓";
+
         siteToast.hidden = false;
-        siteToast.classList.add("is-visible");
+        requestAnimationFrame(() => siteToast.classList.add("is-visible"));
 
         window.setTimeout(() => {
             siteToast.classList.remove("is-visible");
             window.setTimeout(() => {
                 siteToast.hidden = true;
             }, 220);
-        }, 2000);
+        }, 2600);
     }
 });

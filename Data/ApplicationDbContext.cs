@@ -23,6 +23,7 @@ public class ApplicationDbContext
     public DbSet<Reservation> Reservations => Set<Reservation>();
     public DbSet<Loan> Loans => Set<Loan>();
     public DbSet<Review> Reviews => Set<Review>();
+    public DbSet<Rating> Ratings => Set<Rating>();
     public DbSet<Favorite> Favorites => Set<Favorite>();
     public DbSet<Event> Events => Set<Event>();
     public DbSet<EventParticipant> EventParticipants => Set<EventParticipant>();
@@ -130,17 +131,40 @@ public class ApplicationDbContext
             .HasForeignKey(x => x.CopyId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.Entity<Review>()
-            .HasOne(x => x.User)
-            .WithMany(x => x.Reviews)
-            .HasForeignKey(x => x.UserId)
-            .OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<Review>(entity =>
+        {
+            entity.ToTable("reviews");
+            entity.HasKey(x => x.ReviewId);
+            entity.Property(x => x.Text).HasColumnType("text").IsRequired();
+            entity.Property(x => x.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(x => x.UpdatedAt).IsRequired(false);
+            entity.Property(x => x.ModerationStatus).HasMaxLength(20)
+                .HasDefaultValue("Pending").IsRequired();
+            entity.HasIndex(x => new { x.UserId, x.BookId })
+                .IsUnique().HasDatabaseName("UQ_Reviews_UserId_BookId");
+            entity.HasOne(x => x.User).WithMany(x => x.Reviews)
+                .HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(x => x.Book).WithMany(x => x.Reviews)
+                .HasForeignKey(x => x.BookId).OnDelete(DeleteBehavior.Cascade);
+        });
 
-        builder.Entity<Review>()
-            .HasOne(x => x.Book)
-            .WithMany(x => x.Reviews)
-            .HasForeignKey(x => x.BookId)
-            .OnDelete(DeleteBehavior.Cascade);
+        builder.Entity<Rating>(entity =>
+        {
+            entity.ToTable("ratings");
+            entity.HasKey(x => x.RatingId);
+            entity.Property(x => x.RatingValue).HasColumnName("Rating")
+                .HasColumnType("tinyint unsigned").IsRequired();
+            entity.Property(x => x.Text).HasColumnType("text").IsRequired(false);
+            entity.Property(x => x.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(x => x.ModerationStatus).HasMaxLength(20)
+                .HasDefaultValue("Pending").IsRequired();
+            entity.HasIndex(x => new { x.UserId, x.BookId })
+                .IsUnique().HasDatabaseName("UQ_Ratings_UserId_BookId");
+            entity.HasOne(x => x.User).WithMany(x => x.Ratings)
+                .HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(x => x.Book).WithMany(x => x.Ratings)
+                .HasForeignKey(x => x.BookId).OnDelete(DeleteBehavior.Cascade);
+        });
 
         builder.Entity<Event>()
             .Property(x => x.DurationMinutes)

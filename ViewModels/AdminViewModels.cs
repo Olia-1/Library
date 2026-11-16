@@ -10,6 +10,7 @@ public class AdminDashboardViewModel
     public int TotalCopies { get; set; }
     public int ActiveLoans { get; set; }
     public int PendingReviews { get; set; }
+    public int PendingRatings { get; set; }
     public int PendingEvents { get; set; }
     public int PendingReservations { get; set; }
     public List<AdminActivityViewModel> RecentActivities { get; set; } = new();

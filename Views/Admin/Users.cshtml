@@ -14,15 +14,6 @@
             <a class="admin-primary-button" asp-controller="Admin" asp-action="CreateUser">＋ Add User</a>
         </div>
 
-        @if (TempData["AdminMessage"] is string message)
-        {
-            <div class="admin-alert">@message</div>
-        }
-        @if (TempData["AdminError"] is string error)
-        {
-            <div class="admin-alert admin-alert-error">@error</div>
-        }
-
         <section class="admin-panel">
             <div class="admin-panel-heading">
                 <h2>All users (@Model.Count)</h2>

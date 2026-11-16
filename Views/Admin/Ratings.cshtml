@@ -1,0 +1,13 @@
+@model List<PrivateLibrary.Models.Rating>
+@{ ViewData["Title"] = "Rating Moderation"; }
+<div class="admin-shell"><partial name="_AdminSidebar" /><section class="admin-content">
+    <div class="admin-page-heading"><div><span class="admin-eyebrow">CONTENT MODERATION</span><h1>Ratings</h1><p>Moderate numeric ratings separately from written reviews.</p></div></div>
+<section class="admin-panel"><div class="admin-panel-heading"><h2>All ratings (@Model.Count)</h2></div>
+    @if (Model.Count == 0) { <div class="admin-empty">No ratings have been submitted.</div> }
+    @foreach (var rating in Model) {
+        <article class="admin-review-row"><div><strong>@rating.Book.Title · <span class="admin-stars">@rating.RatingValue / 5 ★</span></strong><span>by @rating.User.UserName · @rating.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, HH:mm")</span>@if (!string.IsNullOrWhiteSpace(rating.Text)) { <p>@rating.Text</p> }<small class="admin-muted">Status: @rating.ModerationStatus</small></div>
+        @if (rating.ModerationStatus == "Pending") { <div class="admin-decision-actions"><form asp-action="RatingDecision" method="post">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@rating.RatingId"/><input type="hidden" name="decision" value="Approved"/><button class="admin-approve" type="submit">Approve</button></form><form asp-action="RatingDecision" method="post">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@rating.RatingId"/><input type="hidden" name="decision" value="Rejected"/><button class="admin-reject" type="submit">Reject</button></form></div> }
+        </article>
+    }
+    </section>
+</section></div>

@@ -815,3 +815,346 @@ button, input { font: inherit; }
         font-size: .82rem;
     }
 }
+
+
+/* Separate ratings and written reviews */
+.details-community-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; margin-top:32px; align-items:start; }
+.details-community-grid .details-reviews-section { margin-top:0; min-width:0; }
+.details-community-locked { margin-top:32px; padding:28px; border:1px solid var(--line); border-radius:20px; background:var(--cream-light); }
+.details-opinion-form { display:grid; gap:10px; margin-top:20px; }
+.details-opinion-form label { font-weight:700; color:var(--brown-dark); }
+.details-opinion-form textarea, .details-opinion-form select { width:100%; border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:#fffdf8; color:var(--text); }
+.details-rating-summary { display:flex; flex-direction:column; gap:3px; margin:16px 0; }
+.details-rating-summary strong { font-family:var(--serif); font-size:2rem; color:var(--brown); }
+.details-rating-summary span, .details-moderation-note { color:var(--muted); font-size:.9rem; }
+.details-delete-button { margin-top:10px; border:1px solid #b88a5b; border-radius:999px; padding:8px 14px; color:var(--brown-dark); background:transparent; }
+.details-moderation-note { margin-top:14px; }
+@media (max-width: 850px) { .details-community-grid { grid-template-columns:1fr; } }
+
+/* Community feedback: published content first, compact expandable composers */
+.details-community-grid { align-items:stretch; }
+.details-community-grid .details-reviews-section { display:flex; flex-direction:column; }
+.details-community-list { display:grid; gap:0; margin:10px 0 8px; }
+.details-community-item { padding:13px 0; border-top:1px solid rgba(128,85,47,.13); }
+.details-community-item:first-child { border-top:0; padding-top:4px; }
+.details-community-item-top { display:flex; justify-content:space-between; align-items:center; gap:12px; color:var(--brown-dark); font-size:.88rem; }
+.details-community-item-top time { color:var(--muted); font-size:.76rem; white-space:nowrap; }
+.details-community-item p { margin:7px 0 0; color:var(--text); font-size:.88rem; line-height:1.55; overflow-wrap:anywhere; }
+.details-composer { margin-top:auto; padding-top:14px; border-top:1px solid rgba(128,85,47,.14); }
+.details-composer summary { display:inline-flex; align-items:center; gap:8px; cursor:pointer; color:var(--brown); font-weight:700; font-size:.88rem; list-style:none; }
+.details-composer summary::-webkit-details-marker { display:none; }
+.details-composer summary::before { content:"＋"; display:grid; place-items:center; width:23px; height:23px; border-radius:50%; background:#eee5d8; color:#765334; font-size:1rem; }
+.details-composer[open] summary::before { content:"−"; }
+.details-compact-form { margin-top:13px; gap:9px; }
+.details-compact-form textarea { min-height:76px; resize:vertical; font-size:.88rem; }
+.laurel-rating-picker { display:flex; align-items:flex-end; gap:12px; padding:0; margin:2px 0 8px; border:0; }
+.laurel-rating-picker legend { width:100%; margin-bottom:7px; color:var(--brown-dark); font-weight:700; font-size:.9rem; }
+.laurel-rating-option { display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; color:var(--muted); font-size:.75rem; }
+.laurel-rating-option input { position:absolute; opacity:0; pointer-events:none; }
+.laurel-wreath { display:grid; place-items:center; width:42px; height:42px; border-radius:50%; background:#f1eadf; border:1px solid #e5d7c4; transition:background .18s,border-color .18s,transform .18s; }
+.laurel-wreath svg { width:30px; height:30px; fill:none; stroke:#9a815f; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.laurel-rating-option:hover .laurel-wreath { transform:translateY(-2px); border-color:#91a17a; }
+.laurel-rating-option input:checked + .laurel-wreath { background:#e5ecdd; border-color:#87996f; box-shadow:0 0 0 2px rgba(135,153,111,.14); }
+.laurel-rating-option input:checked + .laurel-wreath svg { stroke:#657d50; }
+.laurel-rating-option input:focus-visible + .laurel-wreath { outline:2px solid #80552f; outline-offset:3px; }
+.details-laurel-inline { color:#72845c; letter-spacing:1px; font-size:1.1rem; }
+.details-laurel-mini { color:#71845b; }
+.details-inline-delete { margin-top:5px; }
+.admin-moderation-counts a { background:#f1e9de; border-radius:30px; padding:6px 10px; font-size:11px; color:#765a3f; text-decoration:none; }
+.admin-moderation-counts a:hover { background:#e8dece; }
+.admin-moderation-choice-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+.admin-moderation-choice { display:flex; align-items:center; gap:13px; min-width:0; padding:20px; border:1px solid #e5d3bc; border-radius:15px; background:#fffaf2; color:#68472c; text-decoration:none; transition:transform .18s,background .18s; }
+.admin-moderation-choice:hover { background:#f5ecdf; transform:translateY(-2px); }
+.admin-choice-icon { display:grid; place-items:center; flex:0 0 42px; height:42px; border-radius:12px; background:#eee5d8; color:#71845b; font-size:24px; }
+.admin-moderation-choice>span:nth-child(2) { display:flex; flex-direction:column; gap:4px; min-width:0; }
+.admin-moderation-choice strong { color:#49301f; }
+.admin-moderation-choice small { color:#8c735d; line-height:1.4; }
+.admin-choice-arrow { margin-left:auto; font-size:20px; }
+@media(max-width:850px) { .admin-moderation-choice-grid { grid-template-columns:1fr; } }
+
+
+/* Laurel rating selector: each score grows by adding paired leaves. */
+.laurel-rating-option { min-width:48px; }
+.laurel-wreath { width:48px; height:48px; padding:7px; }
+.laurel-wreath svg { width:100%; height:100%; overflow:visible; }
+.laurel-wreath .laurel-stem,
+.laurel-wreath .laurel-cross { fill:none; stroke:#9a815f; stroke-width:1.65; stroke-linecap:round; stroke-linejoin:round; }
+.laurel-wreath .laurel-leaf { fill:#b49a75; stroke:#8d704b; stroke-width:.65; transition:fill .18s,stroke .18s; }
+.laurel-rating-option:hover .laurel-wreath { transform:scale(1.08); }
+.laurel-rating-option input:checked + .laurel-wreath { transform:scale(1.13); background:#e5ecdd; border-color:#87996f; }
+.laurel-rating-option input:checked + .laurel-wreath .laurel-stem,
+.laurel-rating-option input:checked + .laurel-wreath .laurel-cross { stroke:#657d50; }
+.laurel-rating-option input:checked + .laurel-wreath .laurel-leaf { fill:#8fa477; stroke:#657d50; }
+.laurel-rating-option:nth-of-type(2) .laurel-wreath { transform:scale(1.02); }
+.laurel-rating-option:nth-of-type(3) .laurel-wreath { transform:scale(1.04); }
+.laurel-rating-option:nth-of-type(4) .laurel-wreath { transform:scale(1.06); }
+.laurel-rating-option:nth-of-type(5) .laurel-wreath { transform:scale(1.08); }
+.details-laurel-inline { display:inline-flex; align-items:center; justify-content:center; width:25px; height:25px; color:#71845b; font-size:1.35rem; }
+
+/* Exact laurel image assets are also used beside the book's average score. */
+.details-laurel-inline {
+    display: inline-flex;
+    width: 24px;
+    height: 24px;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+}
+.details-laurel-inline img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+.laurel-rating-option .laurel-wreath {
+    display: grid;
+    place-items: center;
+    width: 62px;
+    height: 62px;
+    padding: 0;
+    overflow: hidden;
+    border-radius: 50%;
+    background: #f3eadc;
+    border: 1px solid #e4d4bd;
+    transition: transform .18s ease, border-color .18s ease, background .18s ease;
+}
+.laurel-rating-option .laurel-wreath img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.laurel-rating-option input:checked + .laurel-wreath {
+    background: #e5ecdd;
+    border: 2px solid #87996f;
+    box-shadow: 0 0 0 2px rgba(135,153,111,.14);
+    transform: scale(1.08);
+}
+
+/* Rating wreaths: evenly aligned badges, with the wreath itself growing with score. */
+.laurel-rating-picker {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-start;
+    gap: 16px;
+}
+.laurel-rating-option {
+    width: 62px;
+    min-width: 62px;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+.laurel-rating-option .laurel-wreath {
+    box-sizing: border-box;
+    width: 62px;
+    height: 62px;
+    flex: 0 0 62px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    overflow: hidden;
+    border-radius: 50%;
+    background: #f3eadc;
+    border: 1px solid #e4d4bd;
+    transform: none;
+}
+.laurel-rating-option .laurel-wreath img {
+    display: block;
+    height: auto;
+    max-height: 58px;
+    object-fit: contain;
+    flex: 0 0 auto;
+}
+.laurel-rating-option:nth-of-type(1) .laurel-wreath img { width: 25px; }
+.laurel-rating-option:nth-of-type(2) .laurel-wreath img { width: 34px; }
+.laurel-rating-option:nth-of-type(3) .laurel-wreath img { width: 40px; }
+.laurel-rating-option:nth-of-type(4) .laurel-wreath img { width: 49px; }
+.laurel-rating-option:nth-of-type(5) .laurel-wreath img { width: 56px; }
+.laurel-rating-option input:checked + .laurel-wreath {
+    background: #e5ecdd;
+    border: 2px solid #87996f;
+    box-shadow: 0 0 0 2px rgba(135,153,111,.14);
+    transform: none;
+}
+.laurel-rating-option input:checked + .laurel-wreath img {
+    filter: sepia(.2) saturate(.85) hue-rotate(24deg);
+}
+.laurel-rating-option small {
+    display: block;
+    margin-top: 5px;
+    line-height: 1.2;
+}
+
+/* Uniform cream background behind every laurel image. */
+.laurel-rating-option .laurel-wreath {
+    background: rgb(254, 249, 240) !important;
+    border-color: #e4d4bd;
+}
+.laurel-rating-option input:checked + .laurel-wreath {
+    background: #e5ecdd !important;
+    border-color: #87996f;
+}
+.laurel-rating-option .laurel-wreath img {
+    background: transparent;
+}
+
+/* Consistent olive-green laurel artwork and centered rating selector. */
+.details-laurel-mini {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    vertical-align: -4px;
+}
+.laurel-rating-picker {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 14px;
+    width: 100%;
+}
+.laurel-rating-picker legend {
+    width: 100%;
+    text-align: left;
+}
+.laurel-rating-option {
+    flex: 0 0 62px;
+    width: 62px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+}
+.laurel-rating-option .laurel-wreath {
+    width: 62px;
+    height: 62px;
+    flex: 0 0 62px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    box-sizing: border-box;
+}
+.laurel-rating-option:nth-of-type(1) .laurel-wreath img { width: 25px; }
+.laurel-rating-option:nth-of-type(2) .laurel-wreath img { width: 34px; }
+.laurel-rating-option:nth-of-type(3) .laurel-wreath img { width: 40px; }
+.laurel-rating-option:nth-of-type(4) .laurel-wreath img { width: 49px; }
+.laurel-rating-option:nth-of-type(5) .laurel-wreath img { width: 56px; }
+.laurel-rating-option .laurel-wreath img {
+    display: block;
+    height: auto;
+    max-height: 58px;
+    object-fit: contain;
+}
+
+/* Final rating selector alignment: transparent artwork, no rectangular image background. */
+.laurel-rating-picker {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 14px;
+    width: 100%;
+    padding-inline: 0;
+}
+.laurel-rating-option {
+    flex: 0 0 62px;
+    width: 62px;
+    min-width: 62px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    text-align: center;
+}
+.laurel-rating-option .laurel-wreath {
+    width: 62px;
+    height: 62px;
+    flex: 0 0 62px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    padding: 0;
+    overflow: hidden;
+    border-radius: 50%;
+    background: #f3eadc;
+    border: 1px solid #e4d4bd;
+}
+.laurel-rating-option .laurel-wreath img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    object-fit: contain;
+    background: transparent !important;
+    filter: none !important;
+}
+.laurel-rating-option:nth-of-type(1) .laurel-wreath img { width: 24px; height: 24px; }
+.laurel-rating-option:nth-of-type(2) .laurel-wreath img { width: 32px; height: 32px; }
+.laurel-rating-option:nth-of-type(3) .laurel-wreath img { width: 40px; height: 40px; }
+.laurel-rating-option:nth-of-type(4) .laurel-wreath img { width: 48px; height: 48px; }
+.laurel-rating-option:nth-of-type(5) .laurel-wreath img { width: 54px; height: 54px; }
+.laurel-rating-option input:checked + .laurel-wreath {
+    background: #e5ecdd !important;
+    border: 2px solid #87996f;
+    box-shadow: 0 0 0 2px rgba(135,153,111,.14);
+}
+.laurel-rating-option input:checked + .laurel-wreath img {
+    background: transparent !important;
+    filter: none !important;
+}
+.laurel-rating-option small {
+    display: block;
+    width: 100%;
+    margin-top: 5px;
+    text-align: center;
+}
+
+/* Slightly larger laurel artwork, especially for the first two scores. */
+.laurel-rating-option:nth-of-type(1) .laurel-wreath img {
+    width: 32px;
+    height: 32px;
+}
+.laurel-rating-option:nth-of-type(2) .laurel-wreath img {
+    width: 39px;
+    height: 39px;
+}
+.laurel-rating-option:nth-of-type(3) .laurel-wreath img {
+    width: 43px;
+    height: 43px;
+}
+.laurel-rating-option:nth-of-type(4) .laurel-wreath img {
+    width: 51px;
+    height: 51px;
+}
+.laurel-rating-option:nth-of-type(5) .laurel-wreath img {
+    width: 57px;
+    height: 57px;
+}
+/* Make the small average-rating laurel easier to see beside the score. */
+.details-laurel-inline img,
+.details-laurel-mini {
+    width: 23px;
+    height: 23px;
+    object-fit: contain;
+    vertical-align: middle;
+}
+
+/* Shared Private Library form feedback for rating and review actions. */
+.site-toast-success {
+    border-color: #d5dfc7;
+    background: #f0f5e9;
+    color: #405a36;
+}
+.site-toast-error {
+    border-color: #e7cfc1;
+    background: #fbf0e9;
+    color: #87543d;
+}
+.site-toast-error .site-toast-mark {
+    background: #f0ded2;
+    color: #87543d;
+}

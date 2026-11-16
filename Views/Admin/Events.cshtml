@@ -14,11 +14,6 @@
             <a class="admin-primary-button" asp-controller="Events" asp-action="Create">＋ Create Event</a>
         </div>
 
-        @if (TempData["AdminMessage"] is string message)
-        {
-            <div hidden data-site-toast-autoshow="true" data-site-toast-message="@message"></div>
-        }
-
         <section class="admin-panel">
             <div class="admin-panel-heading">
                 <h2>All events (@Model.Count)</h2>
