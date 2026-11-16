@@ -617,3 +617,201 @@ button, input { font: inherit; }
 .admin-moderation-entry>span{font-size:12px;color:#8c735d;margin-top:4px}
 .admin-moderation-entry>p{font-size:13px;line-height:1.5;color:#6e5947;margin:8px 0 0}
 @media(max-width:700px){.admin-form-grid{grid-template-columns:1fr}.admin-form-actions{flex-wrap:wrap}.admin-primary-button{white-space:normal}}
+
+/* Admin user deactivation */
+.admin-alert-error{background:#f7e9e4;border-color:#e8c8bc;color:#914f40}
+.admin-status-rejected{background:#f4e5df!important;color:#985c4b!important}
+.admin-table td form{margin:0}
+.admin-table td .admin-secondary-button{border:1px solid #d9c2a6;border-radius:8px;padding:7px 11px;background:#fffaf2;color:#79512f;font-size:12px;font-weight:600;cursor:pointer}
+.admin-table td .admin-secondary-button:hover{background:#f4e5df;border-color:#d9b7aa;color:#914f40}
+
+
+/* Shared event creation form */
+.events-create-button{text-decoration:none}
+.event-organizer-label{display:inline-block;margin:2px 0 8px;color:#927b63;font-size:.68rem}
+.event-create-form{padding:clamp(22px,4vw,42px)}
+.event-create-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.event-create-field{display:flex;flex-direction:column;gap:7px;min-width:0}
+.event-create-full{grid-column:1/-1}
+.event-create-field label{color:#65472f;font-size:.78rem;font-weight:700}
+.event-create-field input,.event-create-field textarea{width:100%;min-height:44px;padding:11px 13px;border:1px solid #dfcbb2;border-radius:9px;background:#fffaf2;color:#49301f;font:inherit;font-size:.82rem;outline:none}
+.event-create-field textarea{resize:vertical;min-height:120px}
+.event-create-field input:focus,.event-create-field textarea:focus{border-color:#a4774e;box-shadow:0 0 0 3px rgba(164,119,78,.13)}
+.event-create-error{color:#a44f3d;font-size:.7rem}
+.event-create-note{margin:20px 0 0;color:#8c735d;font-size:.74rem;line-height:1.65}
+.event-create-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px;padding-top:18px;border-top:1px solid rgba(128,85,47,.12)}
+.event-create-actions .event-button{font:inherit;font-size:.76rem}
+@media(max-width:600px){.event-create-grid{grid-template-columns:1fr}.event-create-full{grid-column:auto}.event-create-actions{flex-direction:column-reverse}.event-create-actions>*{width:100%}}
+
+
+/* Event creation: location and duration selectors */
+.event-create-field select{
+    width:100%;min-height:44px;padding:11px 13px;border:1px solid #dfcbb2;
+    border-radius:9px;background:#fffaf2;color:#49301f;font:inherit;font-size:.82rem;outline:none
+}
+.event-create-field select:focus{
+    border-color:#a4774e;box-shadow:0 0 0 3px rgba(164,119,78,.13)
+}
+.event-create-field small{color:#927b63;font-size:.7rem}
+
+/* Branded confirmation dialog instead of the browser confirm popup */
+.site-confirm-dialog{
+    width:min(92vw,480px);max-width:480px;padding:0;border:1px solid #e5d2b8;
+    border-radius:18px;background:#fffaf2;color:#493323;
+    box-shadow:0 24px 80px rgba(55,35,19,.24)
+}
+.site-confirm-dialog::backdrop{background:rgba(43,31,22,.42);backdrop-filter:blur(3px)}
+.site-confirm-content{position:relative;padding:30px}
+.site-confirm-close{
+    position:absolute;top:13px;right:15px;border:0;background:transparent;
+    color:#806044;font-size:25px;line-height:1;cursor:pointer
+}
+.site-confirm-content h2{margin:12px 0 8px;color:#493323;font:600 25px var(--serif)}
+.site-confirm-content p{margin:0;color:#806a53;font-size:.88rem;line-height:1.6}
+.site-confirm-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:10px;margin-top:24px}
+.site-confirm-actions .event-button{font:inherit;font-size:.78rem}
+@media(max-width:520px){
+    .site-confirm-content{padding:25px 20px}
+    .site-confirm-actions{flex-direction:column-reverse}
+    .site-confirm-actions .event-button{width:100%}
+}
+
+
+/* Informational modal uses the same Private Library visual language as confirmations. */
+.site-message-dialog .site-confirm-content h2 { margin-bottom: 10px; }
+.site-message-dialog .site-confirm-actions { justify-content: flex-end; }
+.events-create-button { font-family: inherit; }
+
+
+/* Event date picker and available start-time selector */
+.event-time-slots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    min-height: 44px;
+    padding: 4px 0;
+}
+.event-time-slot {
+    min-width: 82px;
+    padding: 11px 16px;
+    border: 1px solid #dfc8aa;
+    border-radius: 12px;
+    background: #fffaf2;
+    color: #68472f;
+    font: inherit;
+    cursor: pointer;
+    transition: background .18s ease, color .18s ease, border-color .18s ease, transform .18s ease;
+}
+.event-time-slot:hover {
+    border-color: #80552f;
+    transform: translateY(-1px);
+}
+.event-time-slot.selected {
+    background: #80552f;
+    border-color: #80552f;
+    color: #fffaf2;
+}
+.event-time-loading {
+    display: block;
+    padding: 10px 2px;
+    color: #9a795d;
+}
+.event-create-field input[type="date"] {
+    width: 100%;
+    min-height: 52px;
+    padding: 12px 16px;
+    border: 1px solid #dfc8aa;
+    border-radius: 12px;
+    background: #fffaf2;
+    color: #493323;
+    font: inherit;
+}
+.admin-event-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+.admin-event-actions form { margin: 0; }
+.admin-secondary-button {
+    border: 1px solid #d9bd99;
+    border-radius: 10px;
+    padding: 9px 14px;
+    background: #f4eadb;
+    color: #68472f;
+    font: inherit;
+    cursor: pointer;
+}
+@media (max-width: 700px) {
+    .event-time-slot { flex: 1 0 28%; }
+    .admin-event-actions { justify-content: flex-start; }
+}
+
+.event-long-duration-field {
+    margin-top: 12px;
+}
+.event-long-duration-field[hidden] {
+    display: none !important;
+}
+.event-long-duration-field input {
+    width: 100%;
+    min-height: 48px;
+    margin-top: 6px;
+    padding: 10px 14px;
+    border: 1px solid #dfc8aa;
+    border-radius: 12px;
+    background: #fffaf2;
+    color: #493323;
+    font: inherit;
+}
+
+
+/* Centered, short-lived feedback toast for successful event actions */
+.site-toast {
+    position: fixed;
+    z-index: 3000;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -42%);
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    width: max-content;
+    max-width: min(90vw, 560px);
+    padding: 18px 25px;
+    border: 1px solid #d5dfc7;
+    border-radius: 16px;
+    background: #f0f5e9;
+    color: #405a36;
+    box-shadow: 0 18px 55px rgba(55, 42, 27, .2);
+    font-size: .9rem;
+    line-height: 1.5;
+    text-align: left;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s ease, transform .2s ease;
+}
+.site-toast[hidden] { display: none; }
+.site-toast.is-visible {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+}
+.site-toast-mark {
+    display: grid;
+    place-items: center;
+    flex: 0 0 30px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #dce8cf;
+    color: #405a36;
+    font-weight: 700;
+}
+@media (max-width: 600px) {
+    .site-toast {
+        width: calc(100vw - 32px);
+        padding: 15px 18px;
+        font-size: .82rem;
+    }
+}

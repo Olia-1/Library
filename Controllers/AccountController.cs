@@ -165,7 +165,8 @@ public class AccountController : Controller
             FirstName = string.Empty,
             LastName = string.Empty,
             CreatedAt = DateTime.UtcNow,
-            IsFavoritesPublic = false
+            IsFavoritesPublic = false,
+            IsActive = true
         };
 
         var result = await _userManager.CreateAsync(user, model.Password);
@@ -203,11 +204,21 @@ public class AccountController : Controller
 
         if (user is not null)
         {
-            var result = await _signInManager.PasswordSignInAsync(
-                user.UserName!, model.Password, model.RememberMe, lockoutOnFailure: true);
+            // Validate credentials first, without issuing an authentication cookie.
+            var passwordCheck = await _signInManager.CheckPasswordSignInAsync(
+                user, model.Password, lockoutOnFailure: true);
 
-            if (result.Succeeded)
+            if (passwordCheck.Succeeded)
             {
+                if (!user.IsActive)
+                {
+                    ModelState.AddModelError(string.Empty,
+                        "Your account has been deactivated because the information provided during registration was found to be inconsistent with the Private Library Community Guidelines. If you believe this decision was made in error, please contact the library administration for clarification.");
+                    return View(model);
+                }
+
+                await _signInManager.SignInAsync(user, model.RememberMe);
+
                 if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
                     return Redirect(returnUrl);
 

@@ -7,15 +7,35 @@
         <span class="events-eyebrow">PRIVATE LIBRARY COMMUNITY</span>
         <h1>Library Events</h1>
         <p>Discover book clubs, creative workshops and special gatherings. Find your next moment of inspiration.</p>
-        @if (User.Identity?.IsAuthenticated == true)
-        {
-            <div class="events-hero-actions">
+        <div class="events-hero-actions">
+            @if (User.Identity?.IsAuthenticated == true)
+            {
                 <a class="events-my-link" asp-action="MyEvents">Events <span>→</span></a>
-                <button class="events-create-button" type="button" title="Event creation will be available soon">Create event <span aria-hidden="true">＋</span></button>
-            </div>
-        }
+            }
+
+            @if (Model.CanCreateEvents)
+            {
+                <a class="events-create-button" asp-action="Create">Create event <span aria-hidden="true">＋</span></a>
+            }
+            else
+            {
+                <button class="events-create-button" type="button"
+                        data-site-message-title="Membership required"
+                        data-site-message="@(Model.CreateEventMessage ?? "Please sign in and activate a library membership to create an event.")">
+                    Create event <span aria-hidden="true">＋</span>
+                </button>
+            }
+        </div>
     </div>
 
+    @if (TempData["EventError"] is string eventError)
+    {
+        <div class="events-alert">@eventError</div>
+    }
+    @if (TempData["EventMessage"] is string eventMessage)
+    {
+        <div class="events-alert success">@eventMessage</div>
+    }
     <div class="events-toolbar">
         <div>
             <span class="events-eyebrow">EXPLORE</span>
@@ -50,12 +70,14 @@
                     <div class="event-card-body">
                         <div class="event-card-meta">
                             <span>◷ @item.EventDate.ToString("HH:mm")</span>
+                            <span>Duration: @item.DurationLabel</span>
                             @if (!string.IsNullOrWhiteSpace(item.Location))
                             {
                                 <span>⌖ @item.Location</span>
                             }
                         </div>
                         <h3>@item.Title</h3>
+                        <span class="event-organizer-label">Organized by @item.OrganizerName</span>
                         @if (item.IsOrganizer)
                         {
                             <span class="event-registered-label">Your event</span>
@@ -70,7 +92,7 @@
                             <span class="event-availability @(full ? "full" : "")">@(full ? "Fully booked" : $"{item.AvailablePlaces} places left")</span>
                         </div>
                         <a class="event-details-link" asp-action="Details" asp-route-id="@item.EventId">View details <span>→</span></a>
-                        @if (item.IsRegistered)
+                        @if (item.IsRegistered && !item.IsOrganizer)
                         {
                             <span class="event-registered-label">✓ You are registered</span>
                         }

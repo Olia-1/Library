@@ -78,6 +78,33 @@
         <span>© @DateTime.Now.Year Private Library</span>
     </footer>
 }
+<dialog class="site-confirm-dialog" id="siteConfirmDialog" aria-labelledby="siteConfirmTitle">
+    <div class="site-confirm-content">
+        <button type="button" class="site-confirm-close" data-confirm-close aria-label="Close">×</button>
+        <span class="events-eyebrow">PRIVATE LIBRARY</span>
+        <h2 id="siteConfirmTitle">Please confirm</h2>
+        <p id="siteConfirmMessage">Are you sure?</p>
+        <div class="site-confirm-actions">
+            <button type="button" class="event-button secondary" id="siteConfirmCancel" data-confirm-close>Go back</button>
+            <button type="button" class="event-button" id="siteConfirmAccept">Confirm</button>
+        </div>
+    </div>
+</dialog>
+<dialog class="site-confirm-dialog site-message-dialog" id="siteMessageDialog" aria-labelledby="siteMessageTitle">
+    <div class="site-confirm-content">
+        <button type="button" class="site-confirm-close" data-message-close aria-label="Close">×</button>
+        <span class="events-eyebrow">PRIVATE LIBRARY</span>
+        <h2 id="siteMessageTitle">Membership required</h2>
+        <p id="siteMessageText">Please sign in and activate a library membership to use this feature.</p>
+        <div class="site-confirm-actions">
+            <button type="button" class="event-button" data-message-close>Got it</button>
+        </div>
+    </div>
+</dialog>
+<div class="site-toast" id="siteToast" role="status" aria-live="polite" hidden>
+    <span class="site-toast-mark" aria-hidden="true">✓</span>
+    <span id="siteToastMessage"></span>
+</div>
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>

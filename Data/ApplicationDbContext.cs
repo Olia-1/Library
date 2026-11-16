@@ -45,6 +45,7 @@ public class ApplicationDbContext
             entity.Property(x => x.FirstName).HasMaxLength(100).IsRequired();
             entity.Property(x => x.LastName).HasMaxLength(100).IsRequired();
             entity.Property(x => x.IsFavoritesPublic).HasDefaultValue(false);
+            entity.Property(x => x.IsActive).HasDefaultValue(true);
             entity.Property(x => x.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(x => x.Email).IsRequired(false);
         });
@@ -140,6 +141,10 @@ public class ApplicationDbContext
             .WithMany(x => x.Reviews)
             .HasForeignKey(x => x.BookId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<Event>()
+            .Property(x => x.DurationMinutes)
+            .HasDefaultValue(60);
 
         builder.Entity<Event>()
             .HasOne(x => x.Creator)

@@ -73,7 +73,14 @@ public class AdminController : Controller
         var users = await _userManager.Users.AsNoTracking().OrderBy(u => u.UserName).ToListAsync();
         var model = new List<AdminUserViewModel>();
         foreach (var user in users)
-            model.Add(new AdminUserViewModel { Id = user.Id, UserName = user.UserName ?? "", Email = user.Email, Roles = string.Join(", ", await _userManager.GetRolesAsync(user)) });
+            model.Add(new AdminUserViewModel
+            {
+                Id = user.Id,
+                UserName = user.UserName ?? "",
+                Email = user.Email,
+                Roles = string.Join(", ", await _userManager.GetRolesAsync(user)),
+                IsActive = user.IsActive
+            });
         return View(model);
     }
 
@@ -100,7 +107,8 @@ public class AdminController : Controller
             Email = string.IsNullOrWhiteSpace(model.Email) ? null : model.Email.Trim(),
             FirstName = string.Empty,
             LastName = string.Empty,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            IsActive = true
         };
 
         var createResult = await _userManager.CreateAsync(user, model.Password);
@@ -121,6 +129,62 @@ public class AdminController : Controller
         }
 
         TempData["AdminMessage"] = $"Account '{user.UserName}' was created with the {model.Role} role.";
+        return RedirectToAction(nameof(Users));
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeactivateUser(int id)
+    {
+        var user = await _userManager.FindByIdAsync(id.ToString());
+        if (user == null) return NotFound();
+
+        var currentAdminId = _userManager.GetUserId(User);
+        if (user.Id.ToString() == currentAdminId)
+        {
+            TempData["AdminError"] = "You cannot deactivate the account you are currently using.";
+            return RedirectToAction(nameof(Users));
+        }
+
+        if (!user.IsActive)
+        {
+            TempData["AdminMessage"] = $"Account '{user.UserName}' is already deactivated.";
+            return RedirectToAction(nameof(Users));
+        }
+
+        var roles = await _userManager.GetRolesAsync(user);
+        if (roles.Contains("Admin", StringComparer.OrdinalIgnoreCase))
+        {
+            var activeAdminCount = await _userManager.GetUsersInRoleAsync("Admin");
+            if (activeAdminCount.Count(admin => admin.IsActive) <= 1)
+            {
+                TempData["AdminError"] = "The last active administrator account cannot be deactivated.";
+                return RedirectToAction(nameof(Users));
+            }
+        }
+
+        user.IsActive = false;
+        var updateResult = await _userManager.UpdateAsync(user);
+        if (!updateResult.Succeeded)
+        {
+            TempData["AdminError"] = string.Join(" ", updateResult.Errors.Select(e => e.Description));
+            return RedirectToAction(nameof(Users));
+        }
+
+        // Refresh the security stamp so existing sign-in cookies are invalidated.
+        await _userManager.UpdateSecurityStampAsync(user);
+
+        var notification = new Notification
+        {
+            UserId = user.Id,
+            Title = "Your account has been deactivated",
+            Message = "After reviewing the information provided during registration, we determined that it does not comply with the Private Library Community Guidelines. As a result, your account has been deactivated and access to your library account is no longer available. If you believe this decision was made in error, please contact the library administration for further clarification.",
+            CreatedAt = DateTime.UtcNow,
+            IsRead = false
+        };
+        _context.Notifications.Add(notification);
+        await _context.SaveChangesAsync();
+
+        TempData["AdminMessage"] = $"Account '{user.UserName}' was deactivated. The user will see the notice if they attempt to sign in.";
         return RedirectToAction(nameof(Users));
     }
 
@@ -161,9 +225,68 @@ public class AdminController : Controller
         if (decision is not ("Approved" or "Rejected")) return BadRequest();
         var item = await _context.Events.FindAsync(id);
         if (item == null) return NotFound();
+        if (decision == "Approved" && item.Location == "In Library")
+        {
+            var start = item.EventDate;
+            var end = start.AddMinutes(item.DurationMinutes);
+            var sameDayEvents = await _context.Events
+                .AsNoTracking()
+                .Where(e => e.EventId != item.EventId &&
+                            e.Location == "In Library" &&
+                            e.Status != "Cancelled" &&
+                            (e.ModerationStatus == "Approved" || e.ModerationStatus == null) &&
+                            e.EventDate >= start.Date.AddHours(9) &&
+                            e.EventDate < start.Date.AddHours(20))
+                .Select(e => new { e.EventDate, e.DurationMinutes })
+                .ToListAsync();
+
+            var conflict = sameDayEvents.Any(e =>
+                start < e.EventDate.AddMinutes(e.DurationMinutes) &&
+                end > e.EventDate);
+
+            if (conflict)
+            {
+                TempData["AdminMessage"] = "This event cannot be approved because the library is already booked for an overlapping time.";
+                return RedirectToAction(nameof(Events));
+            }
+        }
+
         item.ModerationStatus = decision;
         await _context.SaveChangesAsync();
         TempData["AdminMessage"] = $"Event {decision.ToLowerInvariant()}.";
+        return RedirectToAction(nameof(Events));
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleEventVisibility(int id)
+    {
+        var item = await _context.Events.FindAsync(id);
+        if (item == null) return NotFound();
+
+        item.IsVisible = !item.IsVisible;
+        await _context.SaveChangesAsync();
+
+        TempData["AdminMessage"] = item.IsVisible
+            ? $"The event “{item.Title}” is now visible in the public events list."
+            : $"The event “{item.Title}” has been hidden from the public events list.";
+        return RedirectToAction(nameof(Events));
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteEvent(int id)
+    {
+        var item = await _context.Events
+            .Include(e => e.Participants)
+            .FirstOrDefaultAsync(e => e.EventId == id);
+
+        if (item == null) return NotFound();
+
+        // Remove registrations first so no orphaned participant records remain.
+        _context.EventParticipants.RemoveRange(item.Participants);
+        _context.Events.Remove(item);
+        await _context.SaveChangesAsync();
+
+        TempData["AdminMessage"] = $"The event “{item.Title}” and its registrations have been deleted.";
         return RedirectToAction(nameof(Events));
     }
 

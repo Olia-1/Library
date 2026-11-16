@@ -9,13 +9,14 @@
             <div>
                 <span class="admin-eyebrow">CONTENT MODERATION</span>
                 <h1>Events</h1>
-                <p>Review community events submitted by library members.</p>
+                <p>Review, publish, hide or remove community events.</p>
             </div>
+            <a class="admin-primary-button" asp-controller="Events" asp-action="Create">＋ Create Event</a>
         </div>
 
         @if (TempData["AdminMessage"] is string message)
         {
-            <div class="admin-alert">@message</div>
+            <div hidden data-site-toast-autoshow="true" data-site-toast-message="@message"></div>
         }
 
         <section class="admin-panel">
@@ -35,30 +36,54 @@
                     <article class="admin-review-row">
                         <div class="admin-moderation-entry">
                             <strong>@item.Title</strong>
-                            <span>Organized by @item.Creator.UserName · @item.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, HH:mm")</span>
+                            <span>Organized by @(item.Creator?.UserName ?? "Library member") · @item.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, HH:mm")</span>
                             <p>@(string.IsNullOrWhiteSpace(item.Description) ? "No description provided." : item.Description)</p>
                             <div class="admin-event-meta">
                                 <span>Event date: @item.EventDate.ToLocalTime().ToString("dd MMM yyyy, HH:mm")</span>
                                 <span>Location: @(string.IsNullOrWhiteSpace(item.Location) ? "Not specified" : item.Location)</span>
+                                <span>Duration: @item.DurationLabel</span>
                                 <span>Participants limit: @item.MaxParticipants</span>
-                                <span class="admin-status">Moderation: @item.ModerationStatus</span>
+                                <span class="admin-status">Moderation: @(item.ModerationStatus ?? "Approved")</span>
+                                @if (item.ModerationStatus == "Approved" || item.ModerationStatus == null)
+                                {
+                                    <span class="admin-status">Visibility: @(item.IsVisible ? "Visible" : "Hidden")</span>
+                                }
                             </div>
                         </div>
-                        @if (item.ModerationStatus == "Pending")
-                        {
-                            <div class="admin-decision-actions">
-                                <form asp-controller="Admin" asp-action="EventDecision" method="post">
+                        <div class="admin-decision-actions admin-event-actions">
+                            @if (item.ModerationStatus == "Pending")
+                            {
+                                <form asp-action="EventDecision" method="post">
+                                    @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@item.EventId" />
                                     <input type="hidden" name="decision" value="Approved" />
                                     <button class="admin-approve" type="submit">Approve</button>
                                 </form>
-                                <form asp-controller="Admin" asp-action="EventDecision" method="post">
+                                <form asp-action="EventDecision" method="post">
+                                    @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@item.EventId" />
                                     <input type="hidden" name="decision" value="Rejected" />
                                     <button class="admin-reject" type="submit">Reject</button>
                                 </form>
-                            </div>
-                        }
+                            }
+                            @if (item.ModerationStatus == "Approved" || item.ModerationStatus == null)
+                            {
+                                <form asp-action="ToggleEventVisibility" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@item.EventId" />
+                                    <button class="admin-secondary-button" type="submit">@(item.IsVisible ? "Hide event" : "Show event")</button>
+                                </form>
+                            }
+                            <form asp-action="DeleteEvent" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@item.EventId" />
+                                <button class="admin-reject" type="submit"
+                                        data-site-confirm="This will permanently delete the event and all its registrations. This action cannot be undone."
+                                        data-site-confirm-title="Delete event?"
+                                        data-site-confirm-cancel="Keep event"
+                                        data-site-confirm-accept="Delete event">Delete</button>
+                            </form>
+                        </div>
                     </article>
                 }
             }

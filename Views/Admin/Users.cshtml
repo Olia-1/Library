@@ -18,6 +18,10 @@
         {
             <div class="admin-alert">@message</div>
         }
+        @if (TempData["AdminError"] is string error)
+        {
+            <div class="admin-alert admin-alert-error">@error</div>
+        }
 
         <section class="admin-panel">
             <div class="admin-panel-heading">
@@ -33,7 +37,7 @@
                 <div class="admin-table-wrap">
                     <table class="admin-table">
                         <thead>
-                            <tr><th>Username</th><th>Email</th><th>Role</th><th>User ID</th></tr>
+                            <tr><th>Username</th><th>Email</th><th>Role</th><th>Status</th><th>Action</th></tr>
                         </thead>
                         <tbody>
                         @foreach (var user in Model)
@@ -42,7 +46,30 @@
                                 <td><strong>@user.UserName</strong></td>
                                 <td>@(string.IsNullOrWhiteSpace(user.Email) ? "Not provided" : user.Email)</td>
                                 <td><span class="admin-status">@user.Roles</span></td>
-                                <td>@user.Id</td>
+                                <td>
+                                    @if (user.IsActive)
+                                    {
+                                        <span class="admin-status">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="admin-status admin-status-rejected">Deactivated</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (user.IsActive)
+                                    {
+                                        <form asp-controller="Admin" asp-action="DeactivateUser" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@user.Id" />
+                                            <button type="submit" class="admin-secondary-button" data-site-confirm="Deactivate this account? The user will no longer be able to sign in." data-site-confirm-title="Deactivate account?" data-site-confirm-cancel="Keep account" data-site-confirm-accept="Deactivate">Remove</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span class="admin-muted">—</span>
+                                    }
+                                </td>
                             </tr>
                         }
                         </tbody>
