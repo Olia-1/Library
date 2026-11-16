@@ -77,18 +77,62 @@
         </section>
 
         <div class="account-dashboard-grid">
-            <section class="account-panel" id="my-reservations">
-                <div class="account-panel-heading"><h2>My Reservations</h2><a asp-controller="Reservations" asp-action="Index">View all →</a></div>
+            <section class="account-panel account-reservations-panel" id="my-reservations">
+                <div class="account-panel-heading">
+                    <div><h2>My Reservations</h2><span class="account-section-note">@Model.ActiveReservationsCount active reservation(s)</span></div>
+                    <a asp-controller="Reservations" asp-action="Index">View all →</a>
+                </div>
                 @if (Model.RecentReservations.Count == 0)
                 {
                     <div class="account-empty"><p>You have not reserved any books yet.</p><a asp-controller="Books" asp-action="Index">Explore the catalog</a></div>
                 }
                 else
                 {
-                    <div class="account-compact-list">
+                    <div class="account-reservation-preview-list">
                         @foreach (var reservation in Model.RecentReservations)
                         {
-                            <div class="account-compact-item"><span class="account-item-symbol">▤</span><div><strong>@reservation.Book?.Title</strong><small>Reserved on @reservation.ReservationDate.ToLocalTime().ToString("dd MMM yyyy")</small></div><span class="account-pill">@reservation.Status</span></div>
+                            var reservationStatusClass = reservation.Status switch
+                            {
+                                "Ready" => "is-ready",
+                                "Pending" => "is-pending",
+                                "Completed" => "is-completed",
+                                "Expired" => "is-expired",
+                                _ => "is-canceled"
+                            };
+                            var reservationStatusLabel = reservation.Status switch
+                            {
+                                "Ready" => "Ready for pickup",
+                                "Pending" => "Waiting in queue",
+                                "Completed" => "Completed",
+                                "Expired" => "Expired",
+                                "Canceled" => "Canceled",
+                                _ => reservation.Status
+                            };
+                            <article class="account-reservation-preview">
+                                <a class="account-reservation-preview-cover" asp-controller="Books" asp-action="Details" asp-route-id="@reservation.BookId">
+                                    @if (!string.IsNullOrWhiteSpace(reservation.Book?.CoverImageUrl))
+                                    {
+                                        <img src="@reservation.Book.CoverImageUrl" alt="Cover of @reservation.Book.Title" />
+                                    }
+                                    else
+                                    {
+                                        <span>♧</span>
+                                    }
+                                </a>
+                                <div class="account-reservation-preview-content">
+                                    <strong><a asp-controller="Books" asp-action="Details" asp-route-id="@reservation.BookId">@reservation.Book?.Title</a></strong>
+                                    <small>Reserved on @reservation.ReservationDate.ToLocalTime().ToString("dd MMM yyyy")</small>
+                                    @if (reservation.Status == "Pending")
+                                    {
+                                        <small class="account-reservation-queue">Your position: #@(reservation.QueuePosition?.ToString() ?? "—")</small>
+                                    }
+                                    else if (reservation.Status == "Ready")
+                                    {
+                                        <small>Collect by @(reservation.ExpirationDate?.ToLocalTime().ToString("dd MMM yyyy") ?? "—")</small>
+                                    }
+                                </div>
+                                <span class="account-reservation-status @reservationStatusClass">@reservationStatusLabel</span>
+                            </article>
                         }
                     </div>
                 }

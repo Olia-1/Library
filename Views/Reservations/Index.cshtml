@@ -1,44 +1,138 @@
-@model IEnumerable<Reservation>
+@model IEnumerable<PrivateLibrary.Models.Reservation>
 @{
     ViewData["Title"] = "My Reservations";
+    var reservations = Model.OrderByDescending(r => r.ReservationDate).ToList();
+    var activeCount = reservations.Count(r => r.Status is "Pending" or "Ready");
+    var readyCount = reservations.Count(r => r.Status == "Ready");
+    var waitingCount = reservations.Count(r => r.Status == "Pending");
 }
-@if (TempData["Error"] is string error)
-{
-    <div class="alert alert-danger">@error</div>
-}
-@if (TempData["Success"] is string success)
-{
-    <div class="alert alert-success">@success</div>
-}
-<h1>My Reservations</h1>
-@if (!Model.Any())
-{
-    <p>You do not have any reservations yet.</p>
-}
-else
-{
-    <table class="table">
-        <thead><tr><th>Book</th><th>Date</th><th>Status</th><th>Queue position</th><th>Collect by</th><th></th></tr></thead>
-        <tbody>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td>@item.Book?.Title</td>
-                <td>@item.ReservationDate.ToLocalTime().ToString("g")</td>
-                <td>@item.Status</td>
-                <td>@(item.QueuePosition?.ToString() ?? "—")</td>
-                <td>@(item.ExpirationDate?.ToLocalTime().ToString("g") ?? "—")</td>
-                <td>
+
+<section class="reader-reservations-page">
+    <div class="reader-reservations-heading">
+        <span class="reader-reservations-eyebrow">YOUR LIBRARY ACCOUNT</span>
+        <h1>My Reservations</h1>
+        <p>Keep track of the books you've reserved.</p>
+    </div>
+
+    @if (TempData["Error"] is string error)
+    {
+        <div class="reader-reservation-message reader-reservation-message-error" role="alert">@error</div>
+    }
+    @if (TempData["Success"] is string success)
+    {
+        <div class="reader-reservation-message reader-reservation-message-success" role="status">@success</div>
+    }
+
+    <div class="reader-reservation-stats">
+        <div class="reader-reservation-stat"><strong>@activeCount</strong><span>Active reservations</span></div>
+        <div class="reader-reservation-stat reader-reservation-stat-ready"><strong>@readyCount</strong><span>Ready for pickup</span></div>
+        <div class="reader-reservation-stat"><strong>@waitingCount</strong><span>Waiting in queue</span></div>
+    </div>
+
+    @if (reservations.Count == 0)
+    {
+        <div class="reader-reservations-empty">
+            <span class="reader-reservations-empty-mark">♧</span>
+            <h2>Your reading list is waiting</h2>
+            <p>You haven't reserved any books yet. Explore the catalog and find your next read.</p>
+            <a asp-controller="Books" asp-action="Index" class="reader-reservation-primary-link">Explore the catalog <span>→</span></a>
+        </div>
+    }
+    else
+    {
+        <div class="reader-reservation-list">
+            @foreach (var item in reservations)
+            {
+                var statusClass = item.Status switch
+                {
+                    "Ready" => "is-ready",
+                    "Pending" => "is-pending",
+                    "Completed" => "is-completed",
+                    "Expired" => "is-expired",
+                    _ => "is-canceled"
+                };
+                var statusLabel = item.Status switch
+                {
+                    "Ready" => "Ready for pickup",
+                    "Pending" => "Waiting in queue",
+                    "Completed" => "Completed",
+                    "Expired" => "Expired",
+                    "Canceled" => "Canceled",
+                    _ => item.Status
+                };
+                var daysLeft = item.ExpirationDate.HasValue
+                    ? (int)Math.Ceiling((item.ExpirationDate.Value - DateTime.Now).TotalDays)
+                    : (int?)null;
+
+                <article class="reader-reservation-card">
+                    <a class="reader-reservation-cover" asp-controller="Books" asp-action="Details" asp-route-id="@item.BookId">
+                        @if (!string.IsNullOrWhiteSpace(item.Book?.CoverImageUrl))
+                        {
+                            <img src="@item.Book.CoverImageUrl" alt="Cover of @item.Book.Title" />
+                        }
+                        else
+                        {
+                            <span>♧</span>
+                        }
+                    </a>
+                    <div class="reader-reservation-content">
+                        <div class="reader-reservation-title-row">
+                            <div>
+                                <span class="reader-reservation-kicker">RESERVED BOOK</span>
+                                <h2><a asp-controller="Books" asp-action="Details" asp-route-id="@item.BookId">@item.Book?.Title</a></h2>
+                            </div>
+                            <span class="reader-reservation-status @statusClass">@statusLabel</span>
+                        </div>
+                        <div class="reader-reservation-details">
+                            <div><span>Reserved on</span><strong>@item.ReservationDate.ToLocalTime().ToString("dd MMM yyyy, HH:mm")</strong></div>
+                            @if (item.Status == "Pending")
+                            {
+                                <div><span>Your position</span><strong class="reader-queue-position">#@(item.QueuePosition?.ToString() ?? "—")</strong></div>
+                            }
+                            else if (item.Status == "Ready")
+                            {
+                                <div><span>Collect by</span><strong>@(item.ExpirationDate?.ToLocalTime().ToString("dd MMM yyyy, HH:mm") ?? "—")</strong></div>
+                            }
+                            else if (item.Status == "Completed")
+                            {
+                                <div><span>Reservation</span><strong>Fulfilled</strong></div>
+                            }
+                            else
+                            {
+                                <div><span>Reservation</span><strong>@statusLabel</strong></div>
+                            }
+                        </div>
+                        @if (item.Status == "Ready" && daysLeft.HasValue)
+                        {
+                            <div class="reader-reservation-deadline">
+                                <span class="reader-reservation-dot"></span>
+                                @if (daysLeft.Value > 0)
+                                {
+                                    <span>Your book is waiting for you · @daysLeft.Value day(s) left</span>
+                                }
+                                else if (daysLeft.Value == 0)
+                                {
+                                    <span>Please collect your book today</span>
+                                }
+                                else
+                                {
+                                    <span>The collection deadline has passed</span>
+                                }
+                            </div>
+                        }
+                    </div>
                     @if (item.Status is "Pending" or "Ready")
                     {
-                        <form asp-action="Cancel" method="post">
-                            <input type="hidden" name="id" value="@item.ReservationId" />
-                            <button type="submit" class="btn btn-outline-danger btn-sm">Cancel</button>
-                        </form>
+                        <div class="reader-reservation-actions">
+                            <form asp-action="Cancel" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@item.ReservationId" />
+                                <button type="submit" class="reader-reservation-cancel" onclick="return confirm('Cancel this reservation?');">Cancel</button>
+                            </form>
+                        </div>
                     }
-                </td>
-            </tr>
-        }
-        </tbody>
-    </table>
-}
+                </article>
+            }
+        </div>
+    }
+</section>

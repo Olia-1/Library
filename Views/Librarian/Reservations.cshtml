@@ -1,0 +1,150 @@
+@model PrivateLibrary.ViewModels.LibrarianReservationsViewModel
+
+@{
+    ViewData["Title"] = "Reservations";
+}
+
+<div class="librarian-shell">
+    <partial name="_LibrarianSidebar" />
+
+    <section class="librarian-content">
+        <div class="librarian-heading">
+            <div>
+                <span class="librarian-eyebrow">CIRCULATION DESK</span>
+                <h1>Reservations</h1>
+                <p>Manage waiting lists and books ready for pickup.</p>
+            </div>
+        </div>
+
+        <section class="librarian-reservation-overview" aria-label="Reservation summary">
+            <div class="reservation-overview-card">
+                <span class="reservation-overview-icon">▤</span>
+                <div><strong>@Model.BooksCount</strong><span>Books with reservations</span></div>
+            </div>
+            <div class="reservation-overview-card">
+                <span class="reservation-overview-icon waiting">↻</span>
+                <div><strong>@Model.PendingCount</strong><span>Readers waiting</span></div>
+            </div>
+            <div class="reservation-overview-card">
+                <span class="reservation-overview-icon ready">✓</span>
+                <div><strong>@Model.ReadyCount</strong><span>Ready for pickup</span></div>
+            </div>
+        </section>
+
+        <section class="librarian-panel librarian-reservations-panel">
+            <div class="librarian-reservations-intro">
+                <div>
+                    <h2>Book waiting lists</h2>
+                </div>
+                <span class="reservation-total-pill">@(Model.PendingCount + Model.ReadyCount) active @((Model.PendingCount + Model.ReadyCount) == 1 ? "reservation" : "reservations")</span>
+            </div>
+
+            <form asp-action="Reservations" method="get" class="librarian-reservation-filters">
+                <div class="librarian-search-control">
+                    <span>⌕</span>
+                    <input name="search" value="@Model.Search" placeholder="Search by book, reader or username..." aria-label="Search reservations" />
+                </div>
+                <select name="status" aria-label="Filter by reservation status">
+                    <option value="">All active reservations</option>
+                    <option value="Pending" selected="@(Model.Status == "Pending")">Waiting list</option>
+                    <option value="Ready" selected="@(Model.Status == "Ready")">Ready for pickup</option>
+                </select>
+                <button type="submit">Search</button>
+                @if (!string.IsNullOrWhiteSpace(Model.Search) || !string.IsNullOrWhiteSpace(Model.Status))
+                {
+                    <a class="librarian-clear-filter" asp-action="Reservations">Clear filters</a>
+                }
+            </form>
+
+            @if (Model.Books.Count == 0)
+            {
+                <div class="librarian-reservations-empty">
+                    <span>▤</span>
+                    <h3>No reservations found</h3>
+                    <p>Try changing your search or status filter.</p>
+                </div>
+            }
+            else
+            {
+                <div class="librarian-reservation-groups">
+                    @foreach (var book in Model.Books)
+                    {
+                        <article class="librarian-reservation-book">
+                            <header class="librarian-reservation-book-heading">
+                                <div class="reservation-book-identity">
+                                    @if (!string.IsNullOrWhiteSpace(book.CoverImageUrl))
+                                    {
+                                        <img class="reservation-book-cover" src="@book.CoverImageUrl" alt="Cover of @book.BookTitle" />
+                                    }
+                                    else
+                                    {
+                                        <div class="reservation-book-cover reservation-book-cover-placeholder">▤</div>
+                                    }
+                                    <div>
+                                        <span class="librarian-eyebrow">BOOK QUEUE</span>
+                                        <h3>@book.BookTitle</h3>
+                                        <span class="reservation-book-subtitle">@book.Reservations.Count reservation(s)</span>
+                                    </div>
+                                </div>
+                                <div class="librarian-reservation-counts">
+                                    @if (book.PendingCount > 0)
+                                    {
+                                        <span class="librarian-queue-count">@book.PendingCount waiting</span>
+                                    }
+                                    @if (book.ReadyCount > 0)
+                                    {
+                                        <span class="librarian-ready-count">@book.ReadyCount ready</span>
+                                    }
+                                </div>
+                            </header>
+
+                            <div class="reservation-list">
+                                @foreach (var reservation in book.Reservations)
+                                {
+                                    <div class="reservation-reader-row">
+                                        <div class="reservation-position @(reservation.Status == "Ready" ? "is-ready" : "")">
+                                            @if (reservation.Status == "Pending")
+                                            {
+                                                <span>#@(reservation.QueuePosition?.ToString() ?? "—")</span>
+                                            }
+                                            else
+                                            {
+                                                <span>✓</span>
+                                            }
+                                        </div>
+                                        <div class="reservation-reader-details">
+                                            <strong>@reservation.UserName</strong>
+                                            <span>@reservation.ReaderName</span>
+                                            <small>Reserved @reservation.ReservationDate.ToLocalTime().ToString("dd MMM yyyy") · Reader ID: @reservation.UserId</small>
+                                        </div>
+                                        <div class="reservation-reader-status">
+                                            @if (reservation.Status == "Ready")
+                                            {
+                                                <span class="reservation-state ready">Ready for pickup</span>
+                                                <small>Collect by @(reservation.ExpirationDate?.ToLocalTime().ToString("dd MMM yyyy") ?? "—")</small>
+                                            }
+                                            else
+                                            {
+                                                <span class="reservation-state pending">Waiting in queue</span>
+                                                <small>Position @(reservation.QueuePosition?.ToString() ?? "—")</small>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                            @if (book.PendingCount > 0)
+                            {
+                                <footer class="reservation-book-footer">
+                                    <span>Next in queue</span>
+                                    <strong>
+                                        @(book.Reservations.FirstOrDefault(r => r.Status == "Pending")?.UserName ?? "—")
+                                    </strong>
+                                </footer>
+                            }
+                        </article>
+                    }
+                </div>
+            }
+        </section>
+    </section>
+</div>

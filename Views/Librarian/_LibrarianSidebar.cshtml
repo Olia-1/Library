@@ -1,0 +1,12 @@
+@{
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+}
+<aside class="librarian-sidebar">
+    <div class="librarian-sidebar-title">Librarian Panel</div>
+    <a class="librarian-side-link @(currentAction == "Index" ? "active" : "")" asp-controller="Librarian" asp-action="Index"><span>▦</span> Dashboard</a>
+    <a class="librarian-side-link @(currentAction == "ManageBooks" ? "active" : "")" asp-controller="Books" asp-action="Index"><span>▣</span> Manage Books</a>
+    <a class="librarian-side-link @(currentAction == "Reservations" ? "active" : "")" asp-controller="Librarian" asp-action="Reservations"><span>▧</span> Reservations</a>
+    <a class="librarian-side-link @(currentAction == "IssueReturn" ? "active" : "")" asp-controller="Librarian" asp-action="IssueReturn"><span>⇄</span> Issue / Return Books</a>
+    <div class="librarian-side-spacer"></div>
+    <a class="librarian-side-link" asp-controller="Account" asp-action="EditProfile"><span>⚙</span> Account Settings</a>
+</aside>
