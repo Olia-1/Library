@@ -32,5 +32,6 @@ public class Book
     public ICollection<BookCopy> Copies { get; set; } = new List<BookCopy>();
     public ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();
     public ICollection<Review> Reviews { get; set; } = new List<Review>();
+    public ICollection<Rating> Ratings { get; set; } = new List<Rating>();
     public ICollection<Favorite> Favorites { get; set; } = new List<Favorite>();
 }

@@ -1,0 +1,48 @@
+@model IReadOnlyList<PrivateLibrary.Models.Favorite>
+@{
+    ViewData["Title"] = $"{ViewBag.OwnerName}'s Favorites";
+}
+<section class="favorites-page public-favorites-page">
+    <div class="favorites-heading">
+        <div>
+            <span class="account-eyebrow">READER'S PUBLIC COLLECTION</span>
+            <h1>@ViewBag.OwnerName's Favorites</h1>
+            <p>A collection of books saved by this reader.</p>
+        </div>
+        <div class="favorites-total">
+            <strong>@Model.Count</strong>
+            <span>@(Model.Count == 1 ? "saved book" : "saved books")</span>
+        </div>
+    </div>
+    @if (Model.Count == 0)
+    {
+        <div class="favorites-empty">
+            <span class="favorites-empty-heart">♡</span>
+            <h2>This collection is empty</h2>
+            <p>There are no saved books to display yet.</p>
+        </div>
+    }
+    else
+    {
+        <div class="favorites-grid">
+            @foreach (var favorite in Model)
+            {
+                var book = favorite.Book;
+                var authors = book.BookAuthors.Select(x => $"{x.Author?.FirstName} {x.Author?.LastName}".Trim())
+                    .Where(x => !string.IsNullOrWhiteSpace(x));
+                <article class="favorite-book-card">
+                    <a asp-controller="Books" asp-action="Details" asp-route-id="@favorite.BookId" class="favorite-book-cover">
+                        @if (!string.IsNullOrWhiteSpace(book.CoverImageUrl))
+                        { <img src="@book.CoverImageUrl" alt="Cover of @book.Title" loading="lazy" /> }
+                        else { <span class="favorite-cover-placeholder">✧</span> }
+                    </a>
+                    <div class="favorite-book-content">
+                        @if (book.Genre is not null) { <span class="favorite-book-genre">@book.Genre.Name</span> }
+                        <h2><a asp-controller="Books" asp-action="Details" asp-route-id="@favorite.BookId">@book.Title</a></h2>
+                        <p>@(authors.Any() ? string.Join(", ", authors) : "Author not specified")</p>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</section>

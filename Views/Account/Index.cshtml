@@ -7,6 +7,7 @@
     var avatarLetter = avatarSource[..1].ToUpperInvariant();
 }
 
+<div class="account-page-container">
 <section class="account-dashboard">
     <aside class="account-sidebar" aria-label="Account navigation">
         <div class="account-sidebar-title">My Account</div>
@@ -14,9 +15,9 @@
         <a class="account-side-link" asp-controller="Reservations" asp-action="Index"><span>▤</span> My Reservations <b>@Model.ActiveReservationsCount</b></a>
         <a class="account-side-link" href="#my-loans"><span>▣</span> My Loans <b>@Model.ActiveLoansCount</b></a>
         <a class="account-side-link" href="#my-reviews"><span>✎</span> My Reviews <b>@Model.ReviewsCount</b></a>
-        <a class="account-side-link" href="#my-favorites"><span>♡</span> My Favorites <b>@Model.FavoritesCount</b></a>
+        <a class="account-side-link" asp-controller="Favorites" asp-action="Index"><span>♡</span> My Favorites <b>@Model.FavoritesCount</b></a>
         <a class="account-side-link" asp-controller="Events" asp-action="MyEvents"><span>✧</span> My Events <b>@Model.EventsCount</b></a>
-        <a class="account-side-link" href="#notifications"><span>♧</span> Notifications <b>@Model.UnreadNotificationsCount</b></a>
+        <a class="account-side-link" asp-controller="Notifications" asp-action="Index"><span>♧</span> Notifications <b>@Model.UnreadNotificationsCount</b></a>
     </aside>
 
     <div class="account-dashboard-main">
@@ -109,65 +110,8 @@
                 }
             </section>
 
-            <section class="account-panel" id="my-favorites">
-                <div class="account-panel-heading"><h2>My Favorites</h2><a asp-controller="Books" asp-action="Index">Browse books →</a></div>
-                @if (Model.FavoriteBooks.Count == 0)
-                {
-                    <div class="account-empty"><p>Your favorite books will appear here.</p></div>
-                }
-                else
-                {
-                    <div class="account-favorite-grid">
-                        @foreach (var favorite in Model.FavoriteBooks)
-                        {
-                            <a asp-controller="Books" asp-action="Details" asp-route-id="@favorite.BookId">
-                                @if (!string.IsNullOrWhiteSpace(favorite.Book?.CoverImageUrl))
-                                { <img src="@favorite.Book.CoverImageUrl" alt="Cover of @favorite.Book.Title" /> }
-                                else
-                                { <span class="account-favorite-placeholder">✧</span> }
-                                <strong>@favorite.Book?.Title</strong>
-                            </a>
-                        }
-                    </div>
-                }
-            </section>
-
-            <section class="account-panel" id="my-reviews">
-                <div class="account-panel-heading"><h2>My Reviews</h2></div>
-                @if (Model.RecentReviews.Count == 0)
-                {
-                    <div class="account-empty"><p>You have not written any reviews yet.</p></div>
-                }
-                else
-                {
-                    <div class="account-compact-list">
-                        @foreach (var review in Model.RecentReviews)
-                        {
-                            <div class="account-review-entry"><div><strong>@review.Book?.Title</strong><span class="account-stars">@(new string('★', Math.Clamp((int)review.Rating, 0, 5)))</span></div>@if (!string.IsNullOrWhiteSpace(review.Comment)) { <p>@review.Comment</p> }<small>@review.CreatedAt.ToLocalTime().ToString("dd MMM yyyy") · @review.ModerationStatus</small></div>
-                        }
-                    </div>
-                }
-            </section>
-
-            <section class="account-panel" id="my-events">
-                <div class="account-panel-heading"><h2>My Events</h2><a asp-controller="Events" asp-action="MyEvents">View all →</a></div>
-                @if (Model.UpcomingEvents.Count == 0)
-                {
-                    <div class="account-empty"><p>You are not registered for any upcoming events.</p><a asp-controller="Events" asp-action="Index">Explore events</a></div>
-                }
-                else
-                {
-                    <div class="account-compact-list">
-                        @foreach (var participant in Model.UpcomingEvents)
-                        {
-                            <div class="account-compact-item"><span class="account-item-symbol">✧</span><div><strong>@participant.Event.Title</strong><small>@participant.Event.EventDate.ToLocalTime().ToString("dd MMM yyyy, HH:mm")</small></div></div>
-                        }
-                    </div>
-                }
-            </section>
-
-            <section class="account-panel" id="notifications">
-                <div class="account-panel-heading"><h2>Notifications</h2><span class="account-muted-count">@Model.UnreadNotificationsCount unread</span></div>
+            <section class="account-panel account-notifications-wide" id="notifications">
+                <div class="account-panel-heading"><h2>Notifications</h2><a asp-controller="Notifications" asp-action="Index">View all</a><span class="account-muted-count">@Model.UnreadNotificationsCount unread</span></div>
                 @if (Model.RecentNotifications.Count == 0)
                 {
                     <div class="account-empty"><p>You have no notifications yet.</p></div>
@@ -185,3 +129,4 @@
         </div>
     </div>
 </section>
+</div>

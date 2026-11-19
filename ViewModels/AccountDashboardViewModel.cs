@@ -15,6 +15,7 @@ public class AccountDashboardViewModel
     public List<Reservation> RecentReservations { get; set; } = new();
     public List<Favorite> FavoriteBooks { get; set; } = new();
     public List<Review> RecentReviews { get; set; } = new();
+    public List<Rating> RecentRatings { get; set; } = new();
     public List<Loan> ActiveLoans { get; set; } = new();
     public List<EventParticipant> UpcomingEvents { get; set; } = new();
     public List<Notification> RecentNotifications { get; set; } = new();

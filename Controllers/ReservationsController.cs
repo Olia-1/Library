@@ -116,6 +116,9 @@ public class ReservationsController : Controller
         {
             UserId = user.Id,
             Title = "Book reservation",
+            Type = "Reservation",
+            RelatedEntityType = "Reservation",
+            RelatedEntityId = reservation.ReservationId,
             Message = reservation.Status == "Ready"
                 ? $"The book is available for pickup for 7 days. Reservation #{reservation.ReservationId}."
                 : $"You have been added to the book waiting list. Position: {reservation.QueuePosition}.",
@@ -181,6 +184,9 @@ public class ReservationsController : Controller
                     {
                         UserId = waiting.UserId,
                         Title = "Book available",
+                        Type = "Reservation",
+                        RelatedEntityType = "Reservation",
+                        RelatedEntityId = waiting.ReservationId,
                        Message = $"A copy of the book '{book?.Title}' is now available. Please collect it within 7 days.",
                         CreatedAt = DateTime.UtcNow,
                         IsRead = false
@@ -200,8 +206,14 @@ public class ReservationsController : Controller
                 await _context.SaveChangesAsync();
             }
 
+            if (string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase))
+                return Json(new { success = true, reservationId = reservation.ReservationId, status = "Canceled" });
+
             TempData["Success"] = "Reservation cancelled.";
         }
+
+        if (string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { success = false, message = "This reservation can no longer be canceled." });
 
         return RedirectToAction(nameof(Index));
     }

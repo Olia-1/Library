@@ -1,0 +1,101 @@
+@model CreateEventViewModel
+@{
+    ViewData["Title"] = "Create Event";
+    var initialDate = Model.EventDate?.ToString("yyyy-MM-dd") ?? DateTime.Today.AddDays(1).ToString("yyyy-MM-dd");
+    var initialLongHours = Math.Max(210, Model.DurationMinutes ?? 210) / 60.0;
+}
+<section class="events-page event-create-page">
+    <a class="events-back-link" asp-action="Index">← Back to events</a>
+    <article class="event-detail-card">
+        <div class="event-detail-heading">
+            <span class="events-eyebrow">PRIVATE LIBRARY COMMUNITY</span>
+            <h1>Create an Event</h1>
+            <p>Share a book club, workshop or gathering with the library community.</p>
+        </div>
+
+        <form asp-controller="Events" asp-action="Create" method="post" class="event-create-form"
+              id="createEventForm"
+              data-available-times-url="@Url.Action("AvailableTimes", "Events")">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="events-alert"></div>
+            <div class="event-create-grid">
+                <div class="event-create-field event-create-full">
+                    <label asp-for="Title"></label>
+                    <input asp-for="Title" required maxlength="200" placeholder="e.g. Monthly Book Club" />
+                    <span asp-validation-for="Title" class="event-create-error"></span>
+                </div>
+
+                <div class="event-create-field event-create-full">
+                    <label asp-for="Description"></label>
+                    <textarea asp-for="Description" rows="5" placeholder="Describe the event and what participants can expect."></textarea>
+                    <span asp-validation-for="Description" class="event-create-error"></span>
+                </div>
+
+                <div class="event-create-field event-create-full">
+                    <label for="eventDatePicker">Event date</label>
+                    <input id="eventDatePicker" type="date" min="@DateTime.Today.ToString("yyyy-MM-dd")"
+                           value="@initialDate" required />
+                    <input asp-for="EventDate" type="hidden" id="EventDate" />
+                    <small>Choose a date, then select one of the available start times below.</small>
+                    <span asp-validation-for="EventDate" class="event-create-error"></span>
+                </div>
+
+                <div class="event-create-field">
+                    <label asp-for="Location"></label>
+                    <select asp-for="Location" id="eventLocation" required>
+                        <option value="In Library">In Library</option>
+                        <option value="Online">Online</option>
+                    </select>
+                    <span asp-validation-for="Location" class="event-create-error"></span>
+                </div>
+
+                <div class="event-create-field">
+                    <label asp-for="DurationMinutes"></label>
+                    <input asp-for="DurationMinutes" type="hidden" id="eventDurationValue" />
+                    <select id="eventDuration" required>
+                        @foreach (var option in new[] { (30, "30 minutes"), (60, "1 hour"), (90, "1.5 hours"), (120, "2 hours"), (150, "2.5 hours"), (180, "3 hours") })
+                        {
+                            <option value="@option.Item1" selected="@(Model.DurationMinutes == option.Item1)">@option.Item2</option>
+                        }
+                        <option value="210" data-online-only="true" selected="@(Model.DurationMinutes > 180)">3+ hours</option>
+                    </select>
+                    <div id="eventLongDurationField" class="event-long-duration-field" hidden>
+                        <label for="eventLongDurationHours">Specify duration (hours)</label>
+                        <input id="eventLongDurationHours" type="number" min="3.5" max="24" step="0.5" value="@initialLongHours.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+                    </div>
+                    <small id="eventDurationHelp">Library events can last from 30 minutes to 3 hours.</small>
+                    <span asp-validation-for="DurationMinutes" class="event-create-error"></span>
+                </div>
+
+                <div class="event-create-field event-create-full">
+                    <label>Available start times</label>
+                    <div id="eventTimeSlots" class="event-time-slots" aria-live="polite">
+                        <span class="event-time-loading">Choose a date to see available times.</span>
+                    </div>
+                    <span id="eventTimeError" class="event-create-error"></span>
+                </div>
+
+                <div class="event-create-field">
+                    <label asp-for="MaxParticipants"></label>
+                    <input asp-for="MaxParticipants" type="number" min="1" max="10000" required />
+                    <span asp-validation-for="MaxParticipants" class="event-create-error"></span>
+                </div>
+            </div>
+
+            <p class="event-create-note">
+                Library events must start between 09:00 and 20:00, last no more than 3 hours,
+                and finish by 20:00. Only available library time slots are shown. Online events
+                can use any future half-hour start time. A 3+ hour duration is available online only.
+                Events submitted by readers require administrator approval before appearing publicly.
+            </p>
+
+            <div class="event-create-actions">
+                <a class="event-button secondary" asp-action="Index">Cancel</a>
+                <button class="event-button" type="submit">Submit event</button>
+            </div>
+        </form>
+    </article>
+</section>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

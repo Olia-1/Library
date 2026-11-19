@@ -15,6 +15,14 @@ public class Notification
     [Required]
     public string Message { get; set; } = string.Empty;
 
+    [StringLength(30)]
+    public string Type { get; set; } = "General";
+
+    [StringLength(30)]
+    public string? RelatedEntityType { get; set; }
+
+    public int? RelatedEntityId { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public bool IsRead { get; set; }
 }

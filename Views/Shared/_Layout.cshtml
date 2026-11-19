@@ -17,6 +17,27 @@
     var controller = ViewContext.RouteData.Values["controller"]?.ToString();
     var action = ViewContext.RouteData.Values["action"]?.ToString();
     var isAuthPage = controller == "Account" && (action == "Login" || action == "Register");
+
+    // All transient feedback uses the same Private Library toast. It is UI feedback only;
+    // it does not create or modify records in the Notifications center.
+    var toastMessage = TempData["Error"] as string;
+    var toastType = "error";
+    if (string.IsNullOrWhiteSpace(toastMessage))
+    {
+        toastMessage = TempData["Success"] as string ?? TempData["EventMessage"] as string;
+        toastType = "success";
+    }
+    if (string.IsNullOrWhiteSpace(toastMessage))
+    {
+        toastMessage = Context.Request.Query["message"].ToString() switch
+        {
+            "full" => "Sorry, all places for this event have been booked.",
+            "closed" => "Registration for this event is closed.",
+            "already" => "You are already registered for this event.",
+            _ => null
+        };
+        toastType = "info";
+    }
 }
 @if (!isAuthPage)
 {
@@ -42,7 +63,7 @@
                     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg>
                 </button>
             </form>
-            <a class="nav-icon" asp-controller="Books" asp-action="Index" aria-label="Favorites">
+            <a class="nav-icon" asp-controller="Favorites" asp-action="Index" aria-label="My favorites">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.8a5.4 5.4 0 0 0-7.6 0L12 6l-1.2-1.2a5.4 5.4 0 0 0-7.6 7.6L12 21l8.8-8.6a5.4 5.4 0 0 0 0-7.6Z"></path></svg>
             </a>
             @if (User.Identity?.IsAuthenticated == true)
@@ -66,6 +87,29 @@
 <main role="main" class="@(isAuthPage ? "auth-main" : "site-main")">
     @RenderBody()
 </main>
+@if (!isAuthPage && !string.IsNullOrWhiteSpace(toastMessage))
+{
+    <div id="siteToastSource" hidden data-site-toast-autoshow="true"
+         data-site-toast-type="@toastType" data-site-toast-message="@toastMessage"></div>
+}
+<div id="siteToast" class="site-toast" role="status" aria-live="polite" hidden>
+    <span class="site-toast-ornament" aria-hidden="true">❧</span>
+    <span id="siteToastMessage" class="site-toast-message"></span>
+    <span class="site-toast-ornament site-toast-ornament-end" aria-hidden="true">❧</span>
+</div>
+<dialog id="siteConfirmDialog" class="site-confirm-dialog">
+    <div class="site-confirm-content">
+        <span class="site-dialog-ornament" aria-hidden="true">❧</span>
+        <button type="button" class="site-confirm-close" data-confirm-close aria-label="Close">×</button>
+        <p class="site-dialog-kicker">PRIVATE LIBRARY</p>
+        <h2 id="siteConfirmTitle">Please confirm</h2>
+        <p id="siteConfirmMessage">Are you sure you want to continue?</p>
+        <div class="site-confirm-actions">
+            <button type="button" class="event-button secondary" data-confirm-close id="siteConfirmCancel">Go back</button>
+            <button type="button" class="event-button" id="siteConfirmAccept">Confirm</button>
+        </div>
+    </div>
+</dialog>
 @if (!isAuthPage)
 {
     <footer class="site-footer">

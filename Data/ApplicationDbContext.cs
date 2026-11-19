@@ -23,6 +23,7 @@ public class ApplicationDbContext
     public DbSet<Reservation> Reservations => Set<Reservation>();
     public DbSet<Loan> Loans => Set<Loan>();
     public DbSet<Review> Reviews => Set<Review>();
+    public DbSet<Rating> Ratings => Set<Rating>();
     public DbSet<Favorite> Favorites => Set<Favorite>();
     public DbSet<Event> Events => Set<Event>();
     public DbSet<EventParticipant> EventParticipants => Set<EventParticipant>();
@@ -138,6 +139,22 @@ public class ApplicationDbContext
         builder.Entity<Review>()
             .HasOne(x => x.Book)
             .WithMany(x => x.Reviews)
+            .HasForeignKey(x => x.BookId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<Rating>()
+            .Property(x => x.Value)
+            .HasColumnName("Rating");
+
+        builder.Entity<Rating>()
+            .HasOne(x => x.User)
+            .WithMany(x => x.Ratings)
+            .HasForeignKey(x => x.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<Rating>()
+            .HasOne(x => x.Book)
+            .WithMany(x => x.Ratings)
             .HasForeignKey(x => x.BookId)
             .OnDelete(DeleteBehavior.Cascade);
 

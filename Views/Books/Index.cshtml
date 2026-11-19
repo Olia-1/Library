@@ -9,6 +9,8 @@
     var yearTo = ViewData["YearTo"]?.ToString() ?? string.Empty;
     var sort = ViewData["Sort"]?.ToString() ?? "title_asc";
     var books = Model.ToList();
+    var favoriteBookIds = ViewBag.FavoriteBookIds as IEnumerable<int> ?? Enumerable.Empty<int>();
+    var favoriteSet = favoriteBookIds.ToHashSet();
 }
 
 <section class="catalog-page">
@@ -96,6 +98,22 @@
                     .Where(x => !string.IsNullOrWhiteSpace(x)));
                 var availableCopies = book.Copies.Count(c => c.Status == "Available");
                 <article class="catalog-book-card">
+                    @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Reader"))
+                    {
+                        <form class="favorite-toggle-form" data-favorite-form>
+                            @Html.AntiForgeryToken()
+                            <button type="button" class="favorite-toggle-button favorite-heart-button @(favoriteSet.Contains(book.BookId) ? "is-favorite" : "")"
+                                    data-favorite-toggle data-url="@Url.Action("Toggle", "Favorites")" data-book-id="@book.BookId"
+                                    aria-pressed="@(favoriteSet.Contains(book.BookId) ? "true" : "false")"
+                                    aria-label="@(favoriteSet.Contains(book.BookId) ? "Remove from favorites" : "Add to favorites")"
+                                    title="@(favoriteSet.Contains(book.BookId) ? "Remove from favorites" : "Add to favorites")">
+                                <svg class="favorite-heart-icon" viewBox="0 0 32 30" aria-hidden="true">
+                                    <path class="heart-outline" d="M16 27S2 18.5 2 9.8C2 2.8 11.2.4 16 7.1 20.8.4 30 2.8 30 9.8 30 18.5 16 27 16 27Z"/>
+                                    <path class="heart-crack" d="M16 7.1 13.4 13l4.2 2.1-3.2 4.1 2.1 7.8"/>
+                                </svg>
+                            </button>
+                        </form>
+                    }
                     <a asp-action="Details" asp-route-id="@book.BookId" class="catalog-cover-link" aria-label="View book @book.Title">
                         <div class="catalog-book-cover">
                             @if (!string.IsNullOrWhiteSpace(book.CoverImageUrl))

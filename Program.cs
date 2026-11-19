@@ -1,3 +1,5 @@
+using System.Globalization;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using PrivateLibrary.Data;
@@ -66,6 +68,16 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+var englishCulture = CultureInfo.GetCultureInfo("en-GB");
+var localizationOptions = new RequestLocalizationOptions
+{
+    DefaultRequestCulture = new RequestCulture(englishCulture),
+    SupportedCultures = new[] { englishCulture },
+    SupportedUICultures = new[] { englishCulture }
+};
+app.UseRequestLocalization(localizationOptions);
+
 app.UseRouting();
 
 app.UseAuthentication();

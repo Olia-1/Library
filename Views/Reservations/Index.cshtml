@@ -1,44 +1,166 @@
-@model IEnumerable<Reservation>
+@model IEnumerable<PrivateLibrary.Models.Reservation>
 @{
     ViewData["Title"] = "My Reservations";
+    var reservations = Model.OrderByDescending(r => r.ReservationDate).ToList();
+    var now = DateTime.Now;
+    bool IsExpired(PrivateLibrary.Models.Reservation r) =>
+        r.Status == "Expired" || (r.Status == "Ready" && r.ExpirationDate.HasValue && r.ExpirationDate.Value.ToLocalTime() < now);
+    var activeCount = reservations.Count(r => (r.Status is "Pending" or "Ready") && !IsExpired(r));
+    var readyCount = reservations.Count(r => r.Status == "Ready" && !IsExpired(r));
+    var waitingCount = reservations.Count(r => r.Status == "Pending");
+    var historyCount = reservations.Count(r => r.Status is "Canceled" or "Completed" || IsExpired(r));
 }
-@if (TempData["Error"] is string error)
-{
-    <div class="alert alert-danger">@error</div>
-}
-@if (TempData["Success"] is string success)
-{
-    <div class="alert alert-success">@success</div>
-}
-<h1>My Reservations</h1>
-@if (!Model.Any())
-{
-    <p>You do not have any reservations yet.</p>
-}
-else
-{
-    <table class="table">
-        <thead><tr><th>Book</th><th>Date</th><th>Status</th><th>Queue position</th><th>Collect by</th><th></th></tr></thead>
-        <tbody>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td>@item.Book?.Title</td>
-                <td>@item.ReservationDate.ToLocalTime().ToString("g")</td>
-                <td>@item.Status</td>
-                <td>@(item.QueuePosition?.ToString() ?? "—")</td>
-                <td>@(item.ExpirationDate?.ToLocalTime().ToString("g") ?? "—")</td>
-                <td>
-                    @if (item.Status is "Pending" or "Ready")
+
+<section class="reader-reservations-page">
+    <div class="reader-reservations-heading">
+        <span class="reader-reservations-eyebrow">YOUR LIBRARY ACCOUNT</span>
+        <h1>My Reservations</h1>
+        <p>Keep track of the books you've reserved.</p>
+    </div>
+
+<div class="reader-reservation-stats" role="group" aria-label="Filter reservations by status">
+        <button type="button" class="reader-reservation-stat is-selected" data-reservation-filter="active" aria-pressed="true"><strong data-count="active">@activeCount</strong><span>Active reservations</span></button>
+        <button type="button" class="reader-reservation-stat reader-reservation-stat-ready" data-reservation-filter="ready" aria-pressed="false"><strong data-count="ready">@readyCount</strong><span>Ready for pickup</span></button>
+        <button type="button" class="reader-reservation-stat" data-reservation-filter="waiting" aria-pressed="false"><strong data-count="waiting">@waitingCount</strong><span>Waiting in queue</span></button>
+        <button type="button" class="reader-reservation-stat" data-reservation-filter="history" aria-pressed="false"><strong data-count="history">@historyCount</strong><span>History</span></button>
+    </div>
+
+    <div class="reader-reservation-tools">
+        <label class="reader-reservation-search"><span class="sr-only">Search reservations</span><input type="search" id="reservationSearch" placeholder="Search by book title…" autocomplete="off" /></label>
+        <div class="reader-reservation-sort">
+            <span>Sort by</span>
+            <div class="reservation-sort-dropdown" data-sort-dropdown>
+                <button type="button" class="reservation-sort-trigger" id="reservationSortTrigger"
+                        aria-haspopup="listbox" aria-expanded="false" aria-controls="reservationSortMenu">
+                    <span data-sort-current>Newest first</span><span class="reservation-sort-chevron" aria-hidden="true">⌄</span>
+                </button>
+                <div class="reservation-sort-menu" id="reservationSortMenu" role="listbox" aria-label="Sort reservations">
+                    <button type="button" role="option" aria-selected="true" data-sort-option="newest"><span class="sort-option-icon">◷</span><span>Newest first</span><span class="sort-option-check">✓</span></button>
+                    <button type="button" role="option" aria-selected="false" data-sort-option="oldest"><span class="sort-option-icon">↶</span><span>Oldest first</span><span class="sort-option-check">✓</span></button>
+                    <button type="button" role="option" aria-selected="false" data-sort-option="title"><span class="sort-option-icon">▤</span><span>Book title</span><span class="sort-option-check">✓</span></button>
+                    <button type="button" role="option" aria-selected="false" data-sort-option="deadline"><span class="sort-option-icon">◷</span><span>Collection deadline</span><span class="sort-option-check">✓</span></button>
+                </div>
+                <select id="reservationSort" class="reservation-sort-native" tabindex="-1" aria-hidden="true">
+                    <option value="newest" selected>Newest first</option><option value="oldest">Oldest first</option><option value="title">Book title</option><option value="deadline">Collection deadline</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    @if (reservations.Count == 0)
+    {
+        <div class="reader-reservations-empty">
+            <span class="reader-reservations-empty-mark">♧</span>
+            <h2>Your reading list is waiting</h2>
+            <p>You haven't reserved any books yet. Explore the catalog and find your next read.</p>
+            <a asp-controller="Books" asp-action="Index" class="reader-reservation-primary-link">Explore the catalog <span>→</span></a>
+        </div>
+    }
+    else
+    {
+        <div class="reader-reservation-list" id="reservationList">
+            @foreach (var item in reservations)
+            {
+                var isExpired = IsExpired(item);
+                var effectiveStatus = isExpired ? "Expired" : item.Status;
+                var statusClass = effectiveStatus switch
+                {
+                    "Ready" => "is-ready",
+                    "Pending" => "is-pending",
+                    "Completed" => "is-completed",
+                    "Expired" => "is-expired",
+                    _ => "is-canceled"
+                };
+                var statusLabel = effectiveStatus switch
+                {
+                    "Ready" => "Ready for pickup",
+                    "Pending" => "Waiting in queue",
+                    "Completed" => "Completed",
+                    "Expired" => "Expired",
+                    "Canceled" => "Canceled",
+                    _ => item.Status
+                };
+                var daysLeft = item.ExpirationDate.HasValue
+                    ? (int)Math.Ceiling((item.ExpirationDate.Value - DateTime.Now).TotalDays)
+                    : (int?)null;
+
+                <article class="reader-reservation-card" data-reservation-card data-status="@effectiveStatus.ToLowerInvariant()" data-title="@item.Book?.Title" data-date="@item.ReservationDate.Ticks" data-deadline="@(item.ExpirationDate?.Ticks ?? 0)">
+                    <a class="reader-reservation-cover" asp-controller="Books" asp-action="Details" asp-route-id="@item.BookId">
+                        @if (!string.IsNullOrWhiteSpace(item.Book?.CoverImageUrl))
+                        {
+                            <img src="@item.Book.CoverImageUrl" alt="Cover of @item.Book.Title" />
+                        }
+                        else
+                        {
+                            <span>♧</span>
+                        }
+                    </a>
+                    <div class="reader-reservation-content">
+                        <div class="reader-reservation-title-row">
+                            <div>
+                                <span class="reader-reservation-kicker">RESERVED BOOK</span>
+                                <h2><a asp-controller="Books" asp-action="Details" asp-route-id="@item.BookId">@item.Book?.Title</a></h2>
+                            </div>
+                            <span class="reader-reservation-status @statusClass">@statusLabel</span>
+                        </div>
+                        <div class="reader-reservation-details">
+                            <div><span>Reserved on</span><strong>@item.ReservationDate.ToLocalTime().ToString("dd MMM yyyy, HH:mm", System.Globalization.CultureInfo.GetCultureInfo("en-GB"))</strong></div>
+                            @if (item.Status == "Pending")
+                            {
+                                <div><span>Your position</span><strong class="reader-queue-position">#@(item.QueuePosition?.ToString() ?? "—")</strong></div>
+                            }
+                            else if (effectiveStatus == "Ready" || effectiveStatus == "Expired")
+                            {
+                                <div><span>Collect by</span><strong>@(item.ExpirationDate?.ToLocalTime().ToString("dd MMM yyyy, HH:mm", System.Globalization.CultureInfo.GetCultureInfo("en-GB")) ?? "—")</strong></div>
+                            }
+                            else if (item.Status == "Completed")
+                            {
+                                <div><span>Reservation</span><strong>Fulfilled</strong></div>
+                            }
+                            else
+                            {
+                                <div><span>Reservation</span><strong>@statusLabel</strong></div>
+                            }
+                        </div>
+                        @if (effectiveStatus == "Ready" && daysLeft.HasValue)
+                        {
+                            <div class="reader-reservation-deadline">
+                                <span class="reader-reservation-dot"></span>
+                                @if (daysLeft.Value > 0)
+                                {
+                                    <span>Your book is waiting for you · @daysLeft.Value day(s) left</span>
+                                }
+                                else if (daysLeft.Value == 0)
+                                {
+                                    <span>Please collect your book today</span>
+                                }
+                                else
+                                {
+                                    <span>The collection deadline has passed</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                    @if (effectiveStatus is "Pending" or "Ready")
                     {
-                        <form asp-action="Cancel" method="post">
-                            <input type="hidden" name="id" value="@item.ReservationId" />
-                            <button type="submit" class="btn btn-outline-danger btn-sm">Cancel</button>
-                        </form>
+                        <div class="reader-reservation-actions">
+                            <form asp-action="Cancel" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@item.ReservationId" />
+                                <button type="submit" class="reader-reservation-cancel"
+                                        data-site-confirm="Cancel this reservation?"
+                                        data-site-confirm-title="Cancel reservation"
+                                        data-site-confirm-accept="Yes, cancel"
+                                        data-site-confirm-cancel="Keep reservation">Cancel</button>
+                            </form>
+                        </div>
                     }
-                </td>
-            </tr>
-        }
-        </tbody>
-    </table>
+                </article>
+            }
+        </div>
+    }
+</section>
+
+@section Scripts {
+    <script src="~/js/reservations-page.js" asp-append-version="true"></script>
 }

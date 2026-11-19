@@ -26,5 +26,7 @@ public class User : IdentityUser<int>
 
     public ICollection<Review> Reviews { get; set; } = new List<Review>();
 
+    public ICollection<Rating> Ratings { get; set; } = new List<Rating>();
+
     public ICollection<Event> CreatedEvents { get; set; } = new List<Event>();
   }

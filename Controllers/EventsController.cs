@@ -19,20 +19,20 @@ public class EventsController : Controller
         _userManager = userManager;
     }
 
-    // Readers can browse approved events without signing in.
     [AllowAnonymous]
     public async Task<IActionResult> Index(string filter = "upcoming")
     {
         var now = DateTime.Now;
         var user = await _userManager.GetUserAsync(User);
         var currentUserId = user?.Id;
+        var (canCreateEvents, createEventMessage, _) = await GetEventCreationAccessAsync(user);
 
-        // Everyone can see approved events. A signed-in user can also see
+        // A signed-in user can see
         // their own events while they are awaiting moderation.
         var query = _context.Events
             .AsNoTracking()
             .Where(e => e.Status != "Cancelled" &&
-                (e.ModerationStatus == "Approved" ||
+                ((e.IsVisible && (e.ModerationStatus == "Approved" || e.ModerationStatus == null)) ||
                  (currentUserId.HasValue && e.CreatedBy == currentUserId.Value)));
 
         query = filter == "past"
@@ -46,11 +46,13 @@ public class EventsController : Controller
                 Title = e.Title,
                 Description = e.Description,
                 EventDate = e.EventDate,
-                Location = e.Location,
+                DurationMinutes = e.DurationMinutes,
+                Location = e.Location ?? "To be announced",
                 MaxParticipants = e.MaxParticipants,
                 RegisteredCount = e.Participants.Count(p => p.Status == "Registered"),
                 IsOrganizer = currentUserId.HasValue && e.CreatedBy == currentUserId.Value,
-                ModerationStatus = e.ModerationStatus
+                ModerationStatus = e.ModerationStatus ?? "Approved",
+                OrganizerName = e.Creator.UserName ?? "Library member"
             })
             .ToListAsync();
 
@@ -64,7 +66,214 @@ public class EventsController : Controller
                 item.IsRegistered = ids.Contains(item.EventId);
         }
 
-        return View(new EventsIndexViewModel { Events = events, Filter = filter });
+        return View(new EventsIndexViewModel
+        {
+            Events = events,
+            Filter = filter,
+            CanCreateEvents = canCreateEvents,
+            CreateEventMessage = createEventMessage
+        });
+    }
+
+    // Returns start times in 30-minute increments. For library events, only
+    // slots that do not overlap an approved, visible or hidden scheduled event are returned.
+    [AllowAnonymous]
+    [HttpGet]
+    public async Task<IActionResult> AvailableTimes(DateTime date, int durationMinutes, string location = "In Library")
+    {
+        if (durationMinutes < 30 || durationMinutes > 1440 || durationMinutes % 30 != 0 ||
+            (durationMinutes > 180 && location != "Online"))
+            return BadRequest();
+
+        var dayStart = date.Date;
+        var now = DateTime.Now;
+        var slots = new List<string>();
+
+        if (location == "Online")
+        {
+            for (var time = TimeSpan.Zero; time < TimeSpan.FromDays(1); time += TimeSpan.FromMinutes(30))
+            {
+                var start = dayStart.Add(time);
+                if (start > now)
+                    slots.Add(start.ToString("HH:mm"));
+            }
+            return Json(slots);
+        }
+
+        if (location != "In Library")
+            return BadRequest();
+
+        var opening = dayStart.AddHours(9);
+        var closing = dayStart.AddHours(20);
+        var existingEvents = await _context.Events
+            .AsNoTracking()
+            .Where(e => e.Location == "In Library" &&
+                        e.Status != "Cancelled" &&
+                        (e.ModerationStatus == "Approved" || e.ModerationStatus == null) &&
+                        e.EventDate >= opening && e.EventDate < closing)
+            .Select(e => new { e.EventDate, e.DurationMinutes })
+            .ToListAsync();
+
+        for (var start = opening; start.AddMinutes(durationMinutes) <= closing; start = start.AddMinutes(30))
+        {
+            if (start <= now)
+                continue;
+
+            var end = start.AddMinutes(durationMinutes);
+            var overlaps = existingEvents.Any(e =>
+                start < e.EventDate.AddMinutes(e.DurationMinutes) &&
+                end > e.EventDate);
+
+            if (!overlaps)
+                slots.Add(start.ToString("HH:mm"));
+        }
+
+        return Json(slots);
+    }
+
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> Create()
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null) return Challenge();
+
+        var (allowed, message, _) = await GetEventCreationAccessAsync(user);
+        if (!allowed)
+        {
+            TempData["Error"] = message;
+            return RedirectToAction(nameof(Index));
+        }
+
+        return View(new CreateEventViewModel
+        {
+            EventDate = DateTime.Today.AddDays(1).AddHours(10),
+            DurationMinutes = 60,
+            Location = "In Library",
+            MaxParticipants = 20
+        });
+    }
+
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create(CreateEventViewModel model)
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null) return Challenge();
+
+        var (allowed, message, autoApprove) = await GetEventCreationAccessAsync(user);
+        if (!allowed)
+        {
+            TempData["Error"] = message;
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (!model.EventDate.HasValue || model.EventDate.Value <= DateTime.Now)
+            ModelState.AddModelError(nameof(model.EventDate), "Choose a date and time in the future.");
+
+        if (model.EventDate.HasValue &&
+            (model.EventDate.Value.Minute is not (0 or 30) || model.EventDate.Value.Second != 0))
+            ModelState.AddModelError(nameof(model.EventDate), "Choose a start time on the hour or half-hour (for example, 09:00 or 09:30).");
+
+        var durationMinutes = model.DurationMinutes ?? 0;
+        var validDuration = durationMinutes >= 30 && durationMinutes <= 1440 &&
+                            durationMinutes % 30 == 0;
+        if (!validDuration || (model.Location == "In Library" && durationMinutes > 180))
+            ModelState.AddModelError(nameof(model.DurationMinutes),
+                "Choose 30 minutes to 3 hours for library events. Online events may last longer in 30-minute increments, up to 24 hours.");
+
+        if (model.Location == "In Library" && model.EventDate.HasValue)
+        {
+            var start = model.EventDate.Value.TimeOfDay;
+            var opening = new TimeSpan(9, 0, 0);
+            var closing = new TimeSpan(20, 0, 0);
+
+            if (start < opening || start >= closing)
+                ModelState.AddModelError(nameof(model.EventDate), "Library events must start between 09:00 and 20:00.");
+
+            if (durationMinutes > 180)
+            {
+                ModelState.AddModelError(nameof(model.DurationMinutes), "Events in the library can last no longer than 3 hours.");
+            }
+            else if (durationMinutes >= 30 &&
+                     model.EventDate.Value.AddMinutes(durationMinutes).TimeOfDay > closing)
+            {
+                ModelState.AddModelError(nameof(model.DurationMinutes), "A library event must finish by 20:00.");
+            }
+        }
+
+        if (model.Location == "In Library" && model.EventDate.HasValue &&
+            ModelState.IsValid)
+        {
+            var proposedStart = model.EventDate.Value;
+            var proposedEnd = proposedStart.AddMinutes(durationMinutes);
+            var sameDayEvents = await _context.Events
+                .AsNoTracking()
+                .Where(e => e.Location == "In Library" &&
+                            e.Status != "Cancelled" &&
+                            (e.ModerationStatus == "Approved" || e.ModerationStatus == null) &&
+                            e.EventDate >= proposedStart.Date.AddHours(9) &&
+                            e.EventDate < proposedStart.Date.AddHours(20))
+                .Select(e => new { e.EventDate, e.DurationMinutes })
+                .ToListAsync();
+
+            var conflict = sameDayEvents.Any(e =>
+                proposedStart < e.EventDate.AddMinutes(e.DurationMinutes) &&
+                proposedEnd > e.EventDate);
+
+            if (conflict)
+                ModelState.AddModelError(nameof(model.EventDate),
+                    "This time is no longer available. Please choose another available time.");
+        }
+
+        if (!ModelState.IsValid) return View(model);
+
+        var libraryEvent = new Event
+        {
+            CreatedBy = user.Id,
+            Title = model.Title.Trim(),
+            Description = string.IsNullOrWhiteSpace(model.Description) ? null : model.Description.Trim(),
+            EventDate = model.EventDate!.Value,
+            DurationMinutes = model.DurationMinutes!.Value,
+            Location = model.Location,
+            MaxParticipants = model.MaxParticipants,
+            CreatedAt = DateTime.UtcNow,
+            Status = "Planned",
+            ModerationStatus = autoApprove ? "Approved" : "Pending"
+        };
+
+        _context.Events.Add(libraryEvent);
+        await _context.SaveChangesAsync();
+
+        TempData["EventMessage"] = autoApprove
+            ? "Your event has been created and is now visible to readers."
+            : "Your event has been submitted and is awaiting administrator approval.";
+
+        return RedirectToAction(nameof(Details), new { id = libraryEvent.EventId });
+    }
+
+    private async Task<(bool Allowed, string? Message, bool AutoApprove)> GetEventCreationAccessAsync(User? user)
+    {
+        if (user == null)
+            return (false, "Please sign in to your account. An active library membership is required to create an event.", false);
+
+        var roles = await _userManager.GetRolesAsync(user);
+        if (roles.Contains("Admin", StringComparer.OrdinalIgnoreCase) ||
+            roles.Contains("Librarian", StringComparer.OrdinalIgnoreCase))
+            return (true, null, true);
+
+        if (!roles.Contains("Reader", StringComparer.OrdinalIgnoreCase))
+            return (false, "Your account does not have permission to create events.", false);
+
+        var now = DateTime.UtcNow;
+        var hasActiveSubscription = await _context.Subscriptions.AnyAsync(s =>
+            s.UserId == user.Id && s.Status == "Active" &&
+            s.StartDate <= now && s.EndDate > now && s.MembershipPlan.IsActive);
+
+        return hasActiveSubscription
+            ? (true, null, false)
+            : (false, "An active library membership is required to create an event. Please choose a membership plan in your account.", false);
     }
 
     [AllowAnonymous]
@@ -75,26 +284,57 @@ public class EventsController : Controller
         var item = await _context.Events
             .AsNoTracking()
             .Where(e => e.EventId == id && e.Status != "Cancelled" &&
-                        (e.ModerationStatus == "Approved" ||
-                         (currentUserId.HasValue && e.CreatedBy == currentUserId.Value)))
+                        ((e.IsVisible && (e.ModerationStatus == "Approved" || e.ModerationStatus == null)) ||
+                         (currentUserId.HasValue && (e.CreatedBy == currentUserId.Value ||
+                          e.Participants.Any(p => p.UserId == currentUserId.Value)))))
             .Select(e => new EventDetailsViewModel
             {
                 EventId = e.EventId,
                 Title = e.Title,
                 Description = e.Description,
                 EventDate = e.EventDate,
-                Location = e.Location,
+                DurationMinutes = e.DurationMinutes,
+                Location = e.Location ?? "To be announced",
                 MaxParticipants = e.MaxParticipants,
                 RegisteredCount = e.Participants.Count(p => p.Status == "Registered"),
                 IsRegistered = user != null && e.Participants.Any(p =>
                     p.UserId == user.Id && p.Status == "Registered"),
                 IsOrganizer = currentUserId.HasValue && e.CreatedBy == currentUserId.Value,
-                ModerationStatus = e.ModerationStatus
+                ModerationStatus = e.ModerationStatus ?? "Approved",
+                OrganizerName = e.Creator.UserName ?? "Library member"
             })
             .FirstOrDefaultAsync();
 
         if (item == null) return NotFound();
+
+        var (canJoin, joinMessage) = await GetEventParticipationAccessAsync(user);
+        item.CanJoinEvents = canJoin;
+        item.JoinEventMessage = joinMessage;
+
         return View(item);
+    }
+
+    private async Task<(bool Allowed, string? Message)> GetEventParticipationAccessAsync(User? user)
+    {
+        if (user == null)
+            return (false, "Please sign in to your account. An active library membership is required to register for this event.");
+
+        var roles = await _userManager.GetRolesAsync(user);
+        if (roles.Contains("Admin", StringComparer.OrdinalIgnoreCase) ||
+            roles.Contains("Librarian", StringComparer.OrdinalIgnoreCase))
+            return (true, null);
+
+        if (!roles.Contains("Reader", StringComparer.OrdinalIgnoreCase))
+            return (false, "Your account does not have permission to register for events.");
+
+        var now = DateTime.UtcNow;
+        var hasActiveSubscription = await _context.Subscriptions.AnyAsync(s =>
+            s.UserId == user.Id && s.Status == "Active" &&
+            s.StartDate <= now && s.EndDate > now && s.MembershipPlan.IsActive);
+
+        return hasActiveSubscription
+            ? (true, null)
+            : (false, "An active library membership is required to register for this event. Please choose a membership plan.");
     }
 
     [Authorize]
@@ -105,11 +345,18 @@ public class EventsController : Controller
         var user = await _userManager.GetUserAsync(User);
         if (user == null) return Challenge();
 
+        var (canJoin, accessMessage) = await GetEventParticipationAccessAsync(user);
+        if (!canJoin)
+        {
+            TempData["Error"] = accessMessage;
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
         var libraryEvent = await _context.Events
             .Include(e => e.Participants)
             .FirstOrDefaultAsync(e => e.EventId == id &&
-                e.ModerationStatus == "Approved" &&
-                e.Status != "Cancelled");
+                (e.ModerationStatus == "Approved" || e.ModerationStatus == null) &&
+                e.IsVisible && e.Status != "Cancelled");
 
         if (libraryEvent == null) return NotFound();
 
@@ -187,6 +434,10 @@ public class EventsController : Controller
         var user = await _userManager.GetUserAsync(User);
         if (user == null) return Challenge();
 
+        var (canCreateEvents, createEventMessage, _) = await GetEventCreationAccessAsync(user);
+        ViewBag.CanCreateEvents = canCreateEvents;
+        ViewBag.CreateEventMessage = createEventMessage;
+
         // Show both events created by the current user and events they joined.
         // The OR condition prevents an event from appearing twice.
         var events = await _context.Events
@@ -200,13 +451,15 @@ public class EventsController : Controller
                 Title = e.Title,
                 Description = e.Description,
                 EventDate = e.EventDate,
-                Location = e.Location,
+                DurationMinutes = e.DurationMinutes,
+                Location = e.Location ?? "To be announced",
                 MaxParticipants = e.MaxParticipants,
                 RegisteredCount = e.Participants.Count(x => x.Status == "Registered"),
                 IsRegistered = e.Participants.Any(x =>
                     x.UserId == user.Id && x.Status == "Registered"),
                 IsOrganizer = e.CreatedBy == user.Id,
-                ModerationStatus = e.ModerationStatus
+                ModerationStatus = e.ModerationStatus ?? "Approved",
+                OrganizerName = e.Creator.UserName ?? "Library member"
             })
             .OrderBy(e => e.EventDate)
             .ToListAsync();

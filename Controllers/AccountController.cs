@@ -68,6 +68,12 @@ public class AccountController : Controller
                 .OrderByDescending(r => r.CreatedAt)
                 .Take(4)
                 .ToListAsync(),
+            RecentRatings = await _context.Ratings
+                .Where(r => r.UserId == user.Id)
+                .Include(r => r.Book)
+                .OrderByDescending(r => r.CreatedAt)
+                .Take(4)
+                .ToListAsync(),
             ActiveLoans = await _context.Loans
                 .Where(l => l.UserId == user.Id && l.ReturnDate == null && l.Status == "Active")
                 .Include(l => l.Copy)

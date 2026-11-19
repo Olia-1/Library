@@ -1,0 +1,89 @@
+@model IReadOnlyList<PrivateLibrary.Models.Favorite>
+@{
+    ViewData["Title"] = "My Favorites";
+    var isPublic = ViewBag.IsFavoritesPublic is bool value && value;
+}
+<section class="favorites-page">
+    <div class="favorites-heading">
+        <div>
+            <span class="account-eyebrow">YOUR PERSONAL COLLECTION</span>
+            <h1>My Favorites</h1>
+            <p>Keep the books you love close, and return to them whenever you like.</p>
+        </div>
+        <div class="favorites-heading-actions">
+            <div class="favorites-visibility">
+                <span class="favorites-visibility-label">Share my collection</span>
+                <label class="favorites-switch">
+                    <input type="checkbox" id="favoritesPublicToggle" checked="@isPublic"
+                           data-url="@Url.Action("SetVisibility", "Favorites")" />
+                    <span class="favorites-switch-track"><span></span></span>
+                </label>
+                <span id="favoritesVisibilityState" class="favorites-visibility-state">@(isPublic ? "Public" : "Private")</span>
+                <form id="favoritesVisibilityForm" class="visually-hidden">
+                    @Html.AntiForgeryToken()
+                </form>
+            </div>
+            <div class="favorites-total">
+                <strong id="favoritesCount">@Model.Count</strong>
+                <span>@(Model.Count == 1 ? "saved book" : "saved books")</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="favorites-visibility-help" id="favoritesVisibilityHelp">
+        @(isPublic ? "Other readers can view your saved books." : "Only you can see your saved books.")
+        <a id="favoritesPublicLink" href="@(isPublic ? Url.Action("Public", "Favorites", new { id = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value }) : "#")"
+           class="@(isPublic ? "" : "is-hidden")" target="_blank" rel="noopener">View public collection ↗</a>
+    </div>
+
+    @if (Model.Count == 0)
+    {
+        <div class="favorites-empty" id="favoritesEmpty">
+            <span class="favorites-empty-heart" aria-hidden="true">♡</span>
+            <h2>Your collection is waiting</h2>
+            <p>Save books from the catalog by selecting the heart. They will appear here.</p>
+            <a asp-controller="Books" asp-action="Index" class="favorites-browse-button">Explore the catalog <span>→</span></a>
+        </div>
+    }
+    else
+    {
+        <div class="favorites-toolbar">
+            <span>Your saved collection</span>
+            <a asp-controller="Books" asp-action="Index">Discover more books <span>→</span></a>
+        </div>
+        <div class="favorites-grid" id="favoritesGrid">
+            @foreach (var favorite in Model)
+            {
+                var book = favorite.Book;
+                var authors = book.BookAuthors.Select(x => $"{x.Author?.FirstName} {x.Author?.LastName}".Trim())
+                    .Where(x => !string.IsNullOrWhiteSpace(x));
+                <article class="favorite-book-card" data-favorite-card="@favorite.BookId">
+                    <button type="button" class="favorite-card-remove" data-favorite-toggle
+                            data-url="@Url.Action("Toggle", "Favorites")" data-book-id="@favorite.BookId"
+                            aria-label="Remove @book.Title from favorites" title="Remove from favorites">
+                        <svg class="favorite-heart-icon" viewBox="0 0 32 30" aria-hidden="true">
+                            <path class="heart-outline" d="M16 27S2 18.5 2 9.8C2 2.8 11.2.4 16 7.1 20.8.4 30 2.8 30 9.8 30 18.5 16 27 16 27Z"/>
+                            <path class="heart-crack" d="M16 7.1 13.4 13l4.2 2.1-3.2 4.1 2.1 7.8"/>
+                        </svg>
+                    </button>
+                    <a asp-controller="Books" asp-action="Details" asp-route-id="@favorite.BookId" class="favorite-book-cover">
+                        @if (!string.IsNullOrWhiteSpace(book.CoverImageUrl))
+                        {
+                            <img src="@book.CoverImageUrl" alt="Cover of @book.Title" loading="lazy" />
+                        }
+                        else { <span class="favorite-cover-placeholder">✧</span> }
+                    </a>
+                    <div class="favorite-book-content">
+                        @if (book.Genre is not null) { <span class="favorite-book-genre">@book.Genre.Name</span> }
+                        <h2><a asp-controller="Books" asp-action="Details" asp-route-id="@favorite.BookId">@book.Title</a></h2>
+                        <p>@(authors.Any() ? string.Join(", ", authors) : "Author not specified")</p>
+                        <small>Added @favorite.AddedAt.ToLocalTime().ToString("dd MMM yyyy", System.Globalization.CultureInfo.GetCultureInfo("en-GB"))</small>
+                        <div class="favorite-book-actions">
+                            <a asp-controller="Books" asp-action="Details" asp-route-id="@favorite.BookId">View book <span>↗</span></a>
+                        </div>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</section>
