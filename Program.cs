@@ -1,11 +1,24 @@
+using System.Net;
+using System.Globalization;
+using System.Net.NetworkInformation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using PrivateLibrary.Data;
 using PrivateLibrary.Models;
+using PrivateLibrary.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Keep all server-rendered dates and month/day names in English,
+// regardless of the operating system or browser language.
+var englishCulture = CultureInfo.GetCultureInfo("en-US");
+CultureInfo.DefaultThreadCurrentCulture = englishCulture;
+CultureInfo.DefaultThreadCurrentUICulture = englishCulture;
+
 builder.Services.AddControllersWithViews();
+builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<NotificationMaintenanceService>();
+builder.Services.AddHostedService<NotificationReminderWorker>();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException(
@@ -38,7 +51,6 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 var app = builder.Build();
 
-// Seed the roles required by the application. The Identity tables must already exist.
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<int>>>();
@@ -77,5 +89,39 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
+
+Console.WriteLine();
+Console.WriteLine("========================================");
+Console.WriteLine("          PRIVATE LIBRARY");
+Console.WriteLine("========================================");
+Console.WriteLine("Local address:   http://localhost:5100");
+Console.WriteLine("Network addresses:");
+
+var networkAddresses = NetworkInterface.GetAllNetworkInterfaces()
+    .Where(network =>
+        network.OperationalStatus == OperationalStatus.Up &&
+        network.NetworkInterfaceType != NetworkInterfaceType.Loopback)
+    .SelectMany(network => network.GetIPProperties().UnicastAddresses)
+    .Where(address =>
+        address.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork &&
+        !IPAddress.IsLoopback(address.Address))
+    .Select(address => address.Address.ToString())
+    .Distinct()
+    .ToList();
+
+if (networkAddresses.Count == 0)
+{
+    Console.WriteLine("  No active IPv4 network address found.");
+}
+else
+{
+    foreach (var address in networkAddresses)
+    {
+        Console.WriteLine($"  http://{address}:5100");
+    }
+}
+
+Console.WriteLine("========================================");
+Console.WriteLine();
 
 app.Run();

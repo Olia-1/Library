@@ -127,7 +127,11 @@
                             <form asp-action="Cancel" method="post">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="id" value="@item.ReservationId" />
-                                <button type="submit" class="reader-reservation-cancel" onclick="return confirm('Cancel this reservation?');">Cancel</button>
+                                <button type="submit" class="reader-reservation-cancel"
+                                        data-site-confirm="Cancel this reservation?"
+                                        data-site-confirm-title="Cancel reservation"
+                                        data-site-confirm-accept="Yes, cancel"
+                                        data-site-confirm-cancel="Keep reservation">Cancel</button>
                             </form>
                         </div>
                     }

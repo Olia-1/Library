@@ -1,0 +1,144 @@
+@model NotificationsViewModel
+@{
+    ViewData["Title"] = "Notifications";
+    var category = (string)(ViewBag.Category ?? "all");
+    var status = (string)(ViewBag.Status ?? "all");
+}
+
+<section class="notifications-page">
+    <div class="notifications-heading">
+        <div>
+            <span class="notifications-eyebrow">YOUR PRIVATE LIBRARY</span>
+            <h1>Notifications <span class="notifications-total-count">@Model.TotalCount notifications</span></h1>
+            <p>Stay updated with your library activity.</p>
+        </div>
+        <div class="notifications-heading-icon" aria-hidden="true">♧</div>
+    </div>
+
+    <div class="notifications-toolbar notifications-toolbar-chips">
+        <div class="notifications-chip-filters">
+            <div class="notification-chip-group">
+                <span class="notification-chip-label">Category</span>
+                <div class="notification-chip-options" role="group" aria-label="Filter by category">
+                    <a class="notification-filter-chip @(category == "all" ? "is-active" : "")" asp-action="Index" asp-route-category="all" asp-route-status="@status" aria-pressed="@(category == "all")">All</a>
+                    <a class="notification-filter-chip @(category == "reviews" ? "is-active" : "")" asp-action="Index" asp-route-category="reviews" asp-route-status="@status" aria-pressed="@(category == "reviews")">Ratings &amp; Reviews</a>
+                    <a class="notification-filter-chip @(category == "events" ? "is-active" : "")" asp-action="Index" asp-route-category="events" asp-route-status="@status" aria-pressed="@(category == "events")">Events</a>
+                    <a class="notification-filter-chip @(category == "reservations" ? "is-active" : "")" asp-action="Index" asp-route-category="reservations" asp-route-status="@status" aria-pressed="@(category == "reservations")">Reservations</a>
+                    <a class="notification-filter-chip @(category == "membership" ? "is-active" : "")" asp-action="Index" asp-route-category="membership" asp-route-status="@status" aria-pressed="@(category == "membership")">Membership</a>
+                    <a class="notification-filter-chip @(category == "account" ? "is-active" : "")" asp-action="Index" asp-route-category="account" asp-route-status="@status" aria-pressed="@(category == "account")">Account</a>
+                </div>
+            </div>
+            <div class="notification-chip-group">
+                <span class="notification-chip-label">Status</span>
+                <div class="notification-chip-options" role="group" aria-label="Filter by status">
+                    <a class="notification-filter-chip @(status == "all" ? "is-active" : "")" asp-action="Index" asp-route-category="@category" asp-route-status="all" aria-pressed="@(status == "all")">All</a>
+                    <a class="notification-filter-chip @(status == "unread" ? "is-active" : "")" asp-action="Index" asp-route-category="@category" asp-route-status="unread" aria-pressed="@(status == "unread")">Unread</a>
+                    <a class="notification-filter-chip @(status == "read" ? "is-active" : "")" asp-action="Index" asp-route-category="@category" asp-route-status="read" aria-pressed="@(status == "read")">Read</a>
+                </div>
+            </div>
+        </div>
+        <div class="notifications-toolbar-actions">
+            @if (category != "all" || status != "all")
+            {
+                <a class="notifications-clear-filter" asp-action="Index">Clear filters</a>
+            }
+            @if (Model.UnreadCount > 0)
+            {
+                <form asp-action="MarkAllAsRead" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="category" value="@category" />
+                    <input type="hidden" name="status" value="@status" />
+                    <button class="notifications-mark-all" type="submit">Mark all as read</button>
+                </form>
+            }
+        </div>
+    </div>
+
+    <div id="notificationList" class="notifications-list">
+        @if (Model.Notifications.Count == 0)
+        {
+            <div class="notifications-empty">
+                <span aria-hidden="true">♧</span>
+                <h2>@(status == "unread" ? "You're all caught up" : "No notifications yet")</h2>
+                <p>@(status == "unread" ? "There are no unread notifications." : "When something happens in your library account, you'll see it here.")</p>
+            </div>
+        }
+        else
+        {
+            @await Html.PartialAsync("_NotificationItems", Model)
+        }
+    </div>
+
+    @if (Model.HasMore)
+    {
+        <button type="button" class="notifications-load-more" id="loadMoreNotifications"
+                data-skip="@Model.NextSkip" data-category="@category" data-status="@status"
+                data-url="@Url.Action("LoadMore", "Notifications")">Load more</button>
+    }
+</section>
+
+@section Scripts {
+    <script>
+        (() => {
+            const button = document.getElementById('loadMoreNotifications');
+            const list = document.getElementById('notificationList');
+            if (!button || !list) return;
+
+            button.addEventListener('click', async () => {
+                button.disabled = true;
+                button.textContent = 'Loading...';
+                const url = new URL(button.dataset.url, window.location.origin);
+                url.searchParams.set('skip', button.dataset.skip);
+                url.searchParams.set('category', button.dataset.category);
+                url.searchParams.set('status', button.dataset.status);
+
+                try {
+                    const response = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                    if (!response.ok) throw new Error('Unable to load notifications.');
+                    const html = await response.text();
+                    const template = document.createElement('template');
+                    template.innerHTML = html.trim();
+                    const wrapper = template.content.querySelector('[data-notification-results]');
+                    if (wrapper) {
+                        // Merge incoming date groups with groups already on the page.
+                        // This prevents the same date heading from appearing twice across pagination.
+                        wrapper.querySelectorAll('.notification-date-group').forEach((incomingGroup) => {
+                            const dateKey = incomingGroup.dataset.notificationDate;
+                            const existingGroup = dateKey
+                                ? list.querySelector(`.notification-date-group[data-notification-date="${dateKey}"]`)
+                                : null;
+
+                            if (existingGroup) {
+                                incomingGroup.querySelectorAll('.notification-card').forEach((card) => {
+                                    existingGroup.appendChild(card);
+                                });
+                            } else {
+                                const resultsContainer = list.querySelector('[data-notification-results]');
+                                if (resultsContainer) {
+                                    resultsContainer.appendChild(incomingGroup);
+                                } else {
+                                    const newResults = document.createElement('div');
+                                    newResults.dataset.notificationResults = '';
+                                    newResults.appendChild(incomingGroup);
+                                    list.appendChild(newResults);
+                                }
+                            }
+                        });
+                        if (wrapper.dataset.hasMore === 'true') {
+                            button.dataset.skip = wrapper.dataset.nextSkip;
+                            button.disabled = false;
+                            button.textContent = 'Load more';
+                        } else {
+                            button.remove();
+                        }
+                    } else {
+                        button.remove();
+                    }
+                } catch {
+                    button.disabled = false;
+                    button.textContent = 'Try again';
+                }
+            });
+        })();
+    </script>
+}

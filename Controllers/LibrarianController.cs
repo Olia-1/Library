@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -5,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using PrivateLibrary.Data;
 using PrivateLibrary.Models;
 using PrivateLibrary.ViewModels;
+using PrivateLibrary.Services;
 
 namespace PrivateLibrary.Controllers;
 
@@ -13,11 +15,13 @@ public class LibrarianController : Controller
 {
     private readonly ApplicationDbContext _context;
     private readonly UserManager<User> _userManager;
+    private readonly NotificationService _notificationService;
 
-    public LibrarianController(ApplicationDbContext context, UserManager<User> userManager)
+    public LibrarianController(ApplicationDbContext context, UserManager<User> userManager, NotificationService notificationService)
     {
         _context = context;
         _userManager = userManager;
+        _notificationService = notificationService;
     }
 
     [HttpGet]
@@ -247,7 +251,7 @@ public class LibrarianController : Controller
             readyReservation.CompletedAt = now;
         }
 
-        _context.Loans.Add(new Loan
+        var loan = new Loan
         {
             CopyId = copy.CopyId,
             UserId = readerId,
@@ -255,18 +259,20 @@ public class LibrarianController : Controller
             IssueDate = now,
             DueDate = dueDate.Date.AddHours(23).AddMinutes(59),
             Status = "Active"
-        });
-
-        _context.Notifications.Add(new Notification
-        {
-            UserId = readerId,
-            Title = "Book issued",
-            Message = $"The book “{copy.Book.Title}” has been issued to you. Please return it by {dueDate:dd MMM yyyy}.",
-            CreatedAt = now,
-            IsRead = false
-        });
+        };
+        _context.Loans.Add(loan);
 
         await _context.SaveChangesAsync();
+
+        var dueDateText = loan.DueDate.ToString("dd MMMM yyyy", CultureInfo.GetCultureInfo("en-GB"));
+        await _notificationService.NotifyUserAsync(
+            loan.UserId,
+            "Book issued",
+            $"The book “{copy.Book.Title}” has been issued to you. Please return it by {dueDateText}.",
+            "Reservation",
+            "Loan",
+            loan.LoanId);
+
         TempData["Success"] = $"“{copy.Book.Title}” was issued to {reader.UserName}.";
         return RedirectToAction(nameof(IssueReturn), new { tab = "issue" });
     }
@@ -304,26 +310,19 @@ public class LibrarianController : Controller
             nextReservation.ExpirationDate = now.AddDays(7);
             loan.Copy.Status = "Reserved";
 
-            _context.Notifications.Add(new Notification
-            {
-                UserId = nextReservation.UserId,
-                Title = "Book available",
-                Message = $"A copy of “{loan.Copy.Book.Title}” is now available for pickup for 7 days.",
-                CreatedAt = now,
-                IsRead = false
-            });
         }
 
-        _context.Notifications.Add(new Notification
-        {
-            UserId = loan.UserId,
-            Title = "Book returned",
-            Message = $"The return of “{loan.Copy.Book.Title}” has been registered.",
-            CreatedAt = now,
-            IsRead = false
-        });
 
         await _context.SaveChangesAsync();
+
+        await _notificationService.NotifyUserAsync(
+            loan.UserId,
+            "Book returned",
+            $"The book “{loan.Copy.Book.Title}” has been successfully returned. Thank you!",
+            "Reservation",
+            "Loan",
+            loan.LoanId);
+
         TempData["Success"] = $"Return of “{loan.Copy.Book.Title}” by {loan.User.UserName} was registered.";
         return RedirectToAction(nameof(IssueReturn), new { tab = "return" });
     }

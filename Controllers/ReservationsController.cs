@@ -116,6 +116,9 @@ public class ReservationsController : Controller
         {
             UserId = user.Id,
             Title = "Book reservation",
+            Type = "Reservation",
+            RelatedEntityType = "Reservation",
+            RelatedEntityId = reservation.ReservationId,
             Message = reservation.Status == "Ready"
                 ? $"The book is available for pickup for 7 days. Reservation #{reservation.ReservationId}."
                 : $"You have been added to the book waiting list. Position: {reservation.QueuePosition}.",
@@ -181,6 +184,9 @@ public class ReservationsController : Controller
                     {
                         UserId = waiting.UserId,
                         Title = "Book available",
+                        Type = "Reservation",
+                        RelatedEntityType = "Reservation",
+                        RelatedEntityId = waiting.ReservationId,
                        Message = $"A copy of the book '{book?.Title}' is now available. Please collect it within 7 days.",
                         CreatedAt = DateTime.UtcNow,
                         IsRead = false

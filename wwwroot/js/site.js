@@ -31,6 +31,24 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
+    // Notification cards open their related destination and mark themselves as read.
+    // Delegation also supports cards appended by the Load more button.
+    document.addEventListener("click", event => {
+        const card = event.target.closest("[data-notification-card]");
+        if (!card) return;
+        const form = card.querySelector(".notification-card-open-form");
+        if (form) form.requestSubmit();
+    });
+
+    document.addEventListener("keydown", event => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        const card = event.target.closest?.("[data-notification-card]");
+        if (!card) return;
+        event.preventDefault();
+        const form = card.querySelector(".notification-card-open-form");
+        if (form) form.requestSubmit();
+    });
+
     // Branded confirmation dialog for important site actions.
     const confirmDialog = document.getElementById("siteConfirmDialog");
     const confirmTitle = document.getElementById("siteConfirmTitle");

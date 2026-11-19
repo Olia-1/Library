@@ -181,7 +181,6 @@ public class AccountController : Controller
         {
             if (!await _userManager.IsInRoleAsync(user, "Reader"))
                 await _userManager.AddToRoleAsync(user, "Reader");
-
             await _signInManager.SignInAsync(user, isPersistent: false);
             return RedirectToAction("Index", "Books");
         }

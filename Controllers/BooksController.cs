@@ -5,13 +5,14 @@ using Microsoft.EntityFrameworkCore;
 using PrivateLibrary.Data;
 using PrivateLibrary.Models;
 using PrivateLibrary.ViewModels;
+using PrivateLibrary.Services;
 
 namespace PrivateLibrary.Controllers;
 
 public class BooksController : Controller
 {
     private readonly ApplicationDbContext _context;
-    public BooksController(ApplicationDbContext context) => _context = context;
+    public BooksController(ApplicationDbContext context) { _context = context; }
 
     [HttpGet]
     public async Task<IActionResult> Index(string? search, int? genreId, short? yearFrom, short? yearTo, string? sort)

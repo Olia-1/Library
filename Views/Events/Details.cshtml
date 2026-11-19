@@ -6,14 +6,6 @@
 }
 <section class="events-page event-details-page">
     <a class="events-back-link" asp-action="Index">← Back to events</a>
-    @if (TempData["EventMessage"] is string successMessage)
-    {
-        <div hidden data-site-toast-autoshow="true" data-site-toast-message="@successMessage"></div>
-    }
-    @if (TempData["EventError"] is string accessError)
-    {
-        <div class="events-alert">@accessError</div>
-    }
     @if (Context.Request.Query["message"] == "full")
     {
         <div class="events-alert">Sorry, all places for this event have been booked.</div>

@@ -17,15 +17,11 @@
         <a class="account-side-link" href="#my-reviews"><span>✎</span> My Reviews <b>@Model.ReviewsCount</b></a>
         <a class="account-side-link" href="#my-favorites"><span>♡</span> My Favorites <b>@Model.FavoritesCount</b></a>
         <a class="account-side-link" asp-controller="Events" asp-action="MyEvents"><span>✧</span> My Events <b>@Model.EventsCount</b></a>
-        <a class="account-side-link" href="#notifications"><span>♧</span> Notifications <b>@Model.UnreadNotificationsCount</b></a>
+        <a class="account-side-link" asp-controller="Notifications" asp-action="Index"><span>♧</span> Notifications <b>@Model.UnreadNotificationsCount</b></a>
     </aside>
 
     <div class="account-dashboard-main">
-        @if (TempData["AccountSuccess"] is string success)
-        {
-            <div class="account-alert account-alert-success" role="status">@success</div>
-        }
-        <div class="account-dashboard-heading">
+<div class="account-dashboard-heading">
             <div><span class="account-eyebrow">YOUR PRIVATE LIBRARY</span><h1>My Profile</h1></div>
             <span class="account-welcome-note">A little space for your reading life.</span>
         </div>
@@ -230,7 +226,8 @@
             </section>
 
             <section class="account-panel" id="notifications">
-                <div class="account-panel-heading"><h2>Notifications</h2><span class="account-muted-count">@Model.UnreadNotificationsCount unread</span></div>
+                <div class="account-panel-heading"><h2>Notifications</h2><a asp-controller="Notifications" asp-action="Index">View all →</a></div>
+                <span class="account-section-note">@Model.UnreadNotificationsCount unread notification(s)</span>
                 @if (Model.RecentNotifications.Count == 0)
                 {
                     <div class="account-empty"><p>You have no notifications yet.</p></div>

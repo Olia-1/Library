@@ -176,10 +176,14 @@ public class ApplicationDbContext
             .HasForeignKey(x => x.CreatedBy)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.Entity<Notification>()
-            .HasOne(x => x.User)
-            .WithMany(x => x.Notifications)
-            .HasForeignKey(x => x.UserId);
+        builder.Entity<Notification>(entity =>
+        {
+            entity.Property(x => x.Type).HasMaxLength(30).HasDefaultValue("General").IsRequired();
+            entity.Property(x => x.RelatedEntityType).HasMaxLength(30);
+            entity.HasOne(x => x.User)
+                .WithMany(x => x.Notifications)
+                .HasForeignKey(x => x.UserId);
+        });
 
         builder.Entity<Subscription>()
             .HasOne(x => x.User)

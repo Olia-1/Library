@@ -28,14 +28,6 @@
         </div>
     </div>
 
-    @if (TempData["EventError"] is string eventError)
-    {
-        <div class="events-alert">@eventError</div>
-    }
-    @if (TempData["EventMessage"] is string eventMessage)
-    {
-        <div class="events-alert success">@eventMessage</div>
-    }
     <div class="events-toolbar">
         <div>
             <span class="events-eyebrow">EXPLORE</span>

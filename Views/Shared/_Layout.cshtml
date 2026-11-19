@@ -1,3 +1,6 @@
+@using System.Security.Claims
+@using Microsoft.EntityFrameworkCore
+@inject PrivateLibrary.Data.ApplicationDbContext Db
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -53,8 +56,20 @@
             <a class="nav-icon" asp-controller="Books" asp-action="Index" aria-label="Favorites">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.8a5.4 5.4 0 0 0-7.6 0L12 6l-1.2-1.2a5.4 5.4 0 0 0-7.6 7.6L12 21l8.8-8.6a5.4 5.4 0 0 0 0-7.6Z"></path></svg>
             </a>
-            @if (User.Identity?.IsAuthenticated == true)
+            @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Reader"))
             {
+                var currentUserIdText = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var unreadNotificationCount = int.TryParse(currentUserIdText, out var currentUserId)
+                    ? await Db.Notifications.CountAsync(n => n.UserId == currentUserId && !n.IsRead)
+                    : 0;
+                <a class="nav-icon nav-notifications-link" asp-controller="Notifications" asp-action="Index"
+                   aria-label="Notifications (@unreadNotificationCount)" title="Notifications">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg>
+                    @if (unreadNotificationCount > 0)
+                    {
+                        <span class="nav-notification-count">@(unreadNotificationCount > 99 ? "99+" : unreadNotificationCount)</span>
+                    }
+                </a>
                 <div class="nav-user">
                     <a class="user-greeting" asp-controller="Account" asp-action="Index">Account: @User.Identity.Name</a>
                     <form asp-controller="Account" asp-action="Logout" method="post">
@@ -109,8 +124,11 @@
     var siteToastMessage = TempData["Success"] as string
         ?? TempData["Error"] as string
         ?? TempData["AdminMessage"] as string
-        ?? TempData["AdminError"] as string;
-    var siteToastType = (TempData.ContainsKey("Error") || TempData.ContainsKey("AdminError")) ? "error" : "success";
+        ?? TempData["AdminError"] as string
+        ?? TempData["EventMessage"] as string
+        ?? TempData["EventError"] as string
+        ?? TempData["AccountSuccess"] as string;
+    var siteToastType = (TempData.ContainsKey("Error") || TempData.ContainsKey("AdminError") || TempData.ContainsKey("EventError")) ? "error" : "success";
 }
 @if (!string.IsNullOrWhiteSpace(siteToastMessage))
 {

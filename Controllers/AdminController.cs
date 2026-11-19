@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using PrivateLibrary.Data;
 using PrivateLibrary.Models;
 using PrivateLibrary.ViewModels;
+using PrivateLibrary.Services;
 
 namespace PrivateLibrary.Controllers;
 
@@ -15,13 +16,15 @@ public class AdminController : Controller
     private readonly ApplicationDbContext _context;
     private readonly UserManager<User> _userManager;
     private readonly RoleManager<IdentityRole<int>> _roleManager;
+    private readonly NotificationService _notifications;
 
     public AdminController(ApplicationDbContext context, UserManager<User> userManager,
-        RoleManager<IdentityRole<int>> roleManager)
+        RoleManager<IdentityRole<int>> roleManager, NotificationService notifications)
     {
         _context = context;
         _userManager = userManager;
         _roleManager = roleManager;
+        _notifications = notifications;
     }
 
     public async Task<IActionResult> Index()
@@ -174,16 +177,20 @@ public class AdminController : Controller
         // Refresh the security stamp so existing sign-in cookies are invalidated.
         await _userManager.UpdateSecurityStampAsync(user);
 
-        var notification = new Notification
+        if (await _userManager.IsInRoleAsync(user, "Reader"))
         {
-            UserId = user.Id,
-            Title = "Your account has been deactivated",
-            Message = "After reviewing the information provided during registration, we determined that it does not comply with the Private Library Community Guidelines. As a result, your account has been deactivated and access to your library account is no longer available. If you believe this decision was made in error, please contact the library administration for further clarification.",
-            CreatedAt = DateTime.UtcNow,
-            IsRead = false
-        };
-        _context.Notifications.Add(notification);
-        await _context.SaveChangesAsync();
+            var notification = new Notification
+            {
+                UserId = user.Id,
+                Title = "Your account has been deactivated",
+                Type = "Account",
+                Message = "After reviewing the information provided during registration, we determined that it does not comply with the Private Library Community Guidelines. As a result, your account has been deactivated and access to your library account is no longer available. If you believe this decision was made in error, please contact the library administration for further clarification.",
+                CreatedAt = DateTime.UtcNow,
+                IsRead = false
+            };
+            _context.Notifications.Add(notification);
+            await _context.SaveChangesAsync();
+        }
 
         TempData["AdminMessage"] = $"Account '{user.UserName}' was deactivated. The user will see the notice if they attempt to sign in.";
         return RedirectToAction(nameof(Users));
@@ -221,6 +228,12 @@ public class AdminController : Controller
 
         rating.ModerationStatus = decision;
         await _context.SaveChangesAsync();
+        await _notifications.NotifyUserAsync(rating.UserId,
+            decision == "Approved" ? "Your rating was approved" : "Your rating was not approved",
+            decision == "Approved"
+                ? $"Your rating for “{rating.Book.Title}” has been approved and is now visible."
+                : $"Your rating for “{rating.Book.Title}” was not approved. You can update it and submit it again.",
+            "Rating", "Book", rating.BookId);
 
         var author = !string.IsNullOrWhiteSpace(rating.User.FirstName)
             ? rating.User.FirstName
@@ -250,6 +263,12 @@ public class AdminController : Controller
 
         review.ModerationStatus = decision;
         await _context.SaveChangesAsync();
+        await _notifications.NotifyUserAsync(review.UserId,
+            decision == "Approved" ? "Your review was approved" : "Your review was not approved",
+            decision == "Approved"
+                ? $"Your review for “{review.Book.Title}” has been approved and is now visible."
+                : $"Your review for “{review.Book.Title}” was not approved. You can edit it and submit it again.",
+            "Review", "Book", review.BookId);
 
         var author = !string.IsNullOrWhiteSpace(review.User.FirstName)
             ? review.User.FirstName
@@ -293,6 +312,12 @@ public class AdminController : Controller
 
         item.ModerationStatus = decision;
         await _context.SaveChangesAsync();
+        await _notifications.NotifyUserAsync(item.CreatedBy,
+            decision == "Approved" ? "Your event was approved" : "Your event was not approved",
+            decision == "Approved"
+                ? $"Your event “{item.Title}” has been approved and is now available to readers."
+                : $"Your event “{item.Title}” was not approved. Please contact the library administration if you need clarification.",
+            "Event", "Event", item.EventId);
         TempData["AdminMessage"] = $"Event {decision.ToLowerInvariant()}.";
         return RedirectToAction(nameof(Events));
     }
@@ -320,6 +345,10 @@ public class AdminController : Controller
             .FirstOrDefaultAsync(e => e.EventId == id);
 
         if (item == null) return NotFound();
+
+        // Notify registered participants before removing the event.
+        await _notifications.NotifyEventParticipantsAsync(item.EventId, "Event cancelled",
+            $"The event “{item.Title}” has been cancelled by the library administration.");
 
         // Remove registrations first so no orphaned participant records remain.
         _context.EventParticipants.RemoveRange(item.Participants);

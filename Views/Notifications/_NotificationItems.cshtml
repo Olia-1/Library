@@ -1,0 +1,78 @@
+@model NotificationsViewModel
+@using System.Globalization
+@functions {
+    private static string EnglishNotificationMessage(string message)
+    {
+        var monthNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["січня"] = "January", ["січ."] = "Jan", ["лютого"] = "February", ["лют."] = "Feb",
+            ["березня"] = "March", ["бер."] = "Mar", ["квітня"] = "April", ["квіт."] = "Apr",
+            ["травня"] = "May", ["трав."] = "May", ["червня"] = "June", ["черв."] = "Jun",
+            ["липня"] = "July", ["лип."] = "Jul", ["серпня"] = "August", ["серп."] = "Aug",
+            ["вересня"] = "September", ["вер."] = "Sep", ["жовтня"] = "October", ["жовт."] = "Oct",
+            ["листопада"] = "November", ["лист."] = "Nov", ["грудня"] = "December", ["груд."] = "Dec"
+        };
+        foreach (var month in monthNames)
+            message = message.Replace(month.Key, month.Value, StringComparison.OrdinalIgnoreCase);
+        return message;
+    }
+}
+@{
+    var groups = Model.Notifications
+        .GroupBy(n => n.CreatedAt.ToLocalTime().Date)
+        .OrderByDescending(g => g.Key)
+        .ToList();
+}
+<div data-notification-results data-has-more="@Model.HasMore.ToString().ToLowerInvariant()" data-next-skip="@Model.NextSkip">
+    @foreach (var group in groups)
+    {
+        var date = group.Key;
+        var heading = date == DateTime.Today ? "TODAY"
+            : date == DateTime.Today.AddDays(-1) ? "YESTERDAY"
+            : date.ToString("dd MMMM yyyy", CultureInfo.GetCultureInfo("en-GB")).ToUpperInvariant();
+        <div class="notification-date-group" data-notification-date="@date.ToString("yyyy-MM-dd")">
+            <h2 class="notification-date-heading">@heading</h2>
+            @foreach (var notification in group)
+            {
+                var icon = notification.Type switch
+                {
+                    "Reservation" => "▤",
+                    "Loan" or "LoanDueSoon" or "LoanDueToday" or "LoanOverdue" => "▣",
+                    "Event" => "✧",
+                    "Review" => "✎",
+                    "Rating" => "☆",
+                    "Membership" or "MembershipExpiring" => "♙",
+                    "Moderation" => "⚑",
+                    "Account" => "♧",
+                    _ => "♧"
+                };
+                var hasDestination = notification.RelatedEntityId.HasValue &&
+                    notification.RelatedEntityType is "Event" or "Book" or "Reservation" or "Loan" or "Subscription";
+                <article class="notification-card notification-card-clickable @(notification.IsRead ? "is-read" : "is-unread")"
+                         data-notification-card tabindex="0" role="button"
+                         aria-label="Open notification: @notification.Title">
+                    <div class="notification-card-icon" aria-hidden="true">@icon</div>
+                    <div class="notification-card-content">
+                        <div class="notification-card-title-row">
+                            <h3>@notification.Title</h3>
+                            <time datetime="@notification.CreatedAt.ToString("O")">@notification.CreatedAt.ToLocalTime().ToString("HH:mm")</time>
+                        </div>
+                        <p>@EnglishNotificationMessage(notification.Message)</p>
+                        <div class="notification-card-footer">
+                            <span class="notification-status">@(notification.IsRead ? "Read" : "Unread")</span>
+                        </div>
+                        <form class="notification-card-open-form" asp-controller="Notifications" asp-action="MarkAsRead" method="post" hidden>
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@notification.NotificationId" />
+                            <input type="hidden" name="filter" value="all" />
+                        </form>
+                    </div>
+                    @if (!notification.IsRead)
+                    {
+                        <span class="notification-unread-dot" aria-label="Unread"></span>
+                    }
+                </article>
+            }
+        </div>
+    }
+</div>

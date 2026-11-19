@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -5,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using PrivateLibrary.Data;
 using PrivateLibrary.Models;
 using PrivateLibrary.ViewModels;
+using PrivateLibrary.Services;
 
 namespace PrivateLibrary.Controllers;
 
@@ -12,14 +14,15 @@ public class EventsController : Controller
 {
     private readonly ApplicationDbContext _context;
     private readonly UserManager<User> _userManager;
+    private readonly NotificationService _notifications;
 
-    public EventsController(ApplicationDbContext context, UserManager<User> userManager)
+    public EventsController(ApplicationDbContext context, UserManager<User> userManager, NotificationService notifications)
     {
         _context = context;
         _userManager = userManager;
+        _notifications = notifications;
     }
 
-    // Readers can browse approved events without signing in.
     [AllowAnonymous]
     public async Task<IActionResult> Index(string filter = "upcoming")
     {
@@ -28,7 +31,7 @@ public class EventsController : Controller
         var currentUserId = user?.Id;
         var (canCreateEvents, createEventMessage, _) = await GetEventCreationAccessAsync(user);
 
-        // Everyone can see approved events. A signed-in user can also see
+        // A signed-in user can see
         // their own events while they are awaiting moderation.
         var query = _context.Events
             .AsNoTracking()
@@ -398,6 +401,12 @@ public class EventsController : Controller
         }
 
         await _context.SaveChangesAsync();
+        await _notifications.NotifyUserAsync(user.Id, "Event registration confirmed",
+            $"You are registered for “{libraryEvent.Title}” on {libraryEvent.EventDate.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("en-GB"))} at {libraryEvent.EventDate:HH:mm}.",
+            "Event", "Event", libraryEvent.EventId);
+        await _notifications.NotifyUserAsync(libraryEvent.CreatedBy, "New event participant",
+            $"{user.UserName} registered for your event “{libraryEvent.Title}”.",
+            "Event", "Event", libraryEvent.EventId);
         TempData["EventMessage"] = "You have successfully registered for this event.";
         return RedirectToAction(nameof(Details), new { id });
     }
@@ -427,6 +436,13 @@ public class EventsController : Controller
 
         participation.Status = "Cancelled";
         await _context.SaveChangesAsync();
+        var cancellingUser = await _userManager.GetUserAsync(User);
+        await _notifications.NotifyUserAsync(user.Id, "Event registration cancelled",
+            $"Your registration for “{libraryEvent.Title}” has been cancelled.",
+            "Event", "Event", libraryEvent.EventId);
+        await _notifications.NotifyUserAsync(libraryEvent.CreatedBy, "Event participant cancelled",
+            $"{cancellingUser?.UserName ?? "A participant"} cancelled their registration for “{libraryEvent.Title}”.",
+            "Event", "Event", libraryEvent.EventId);
 
         TempData["EventMessage"] = "Your registration has been cancelled.";
         return RedirectToAction(nameof(Details), new { id });
