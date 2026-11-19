@@ -88,7 +88,7 @@
                         @foreach (var rating in Model.ApprovedRatings.OrderByDescending(x => x.CreatedAt).Take(3))
                         {
                             <article class="details-community-item">
-                                <div class="details-community-item-top"><strong>@(string.IsNullOrWhiteSpace(rating.User?.FirstName) ? rating.User?.UserName : rating.User.FirstName)</strong><span>@rating.Value/5 <img class="details-laurel-mini" src="~/images/laurel-small.png" asp-append-version="true" alt="" /></span></div>
+                                <div class="details-community-item-top"><a class="community-author-link" asp-controller="Profile" asp-action="Index" asp-route-id="@rating.UserId"><span class="community-author-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="8" r="3.4"></circle><path d="M5.5 20c.5-3.7 3-5.6 6.5-5.6s6 1.9 6.5 5.6"></path></svg></span><strong>@(string.IsNullOrWhiteSpace(rating.User?.UserName) ? "Reader" : rating.User.UserName)</strong></a><span>@rating.Value/5 <img class="details-laurel-mini" src="~/images/laurel-small.png" asp-append-version="true" alt="" /></span></div>
                                 @if (!string.IsNullOrWhiteSpace(rating.Text)) { <p>@rating.Text</p> }
                             </article>
                         }
@@ -129,7 +129,7 @@
                 @if (Model.ApprovedReviews.Count == 0) { <p class="details-no-rating">There are no published reviews for this book yet.</p> }
                 @foreach (var review in Model.ApprovedReviews)
                 {
-                    <article class="details-review"><div class="review-main"><div class="review-topline"><strong>@(string.IsNullOrWhiteSpace(review.User?.FirstName) ? review.User?.UserName : review.User.FirstName)</strong><time>@review.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")</time></div><p>@review.Text</p></div></article>
+                    <article class="details-review"><div class="review-main"><div class="review-topline"><a class="community-author-link" asp-controller="Profile" asp-action="Index" asp-route-id="@review.UserId"><span class="community-author-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="8" r="3.4"></circle><path d="M5.5 20c.5-3.7 3-5.6 6.5-5.6s6 1.9 6.5 5.6"></path></svg></span><strong>@(string.IsNullOrWhiteSpace(review.User?.UserName) ? "Reader" : review.User.UserName)</strong></a><time>@review.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy", System.Globalization.CultureInfo.GetCultureInfo("en-GB"))</time></div><p>@review.Text</p></div></article>
                 }
                 @if (Model.MyReview is not null) { <p class="details-moderation-note">Your review status: @Model.MyReview.ModerationStatus @if (Model.MyReview.UpdatedAt.HasValue) { <span>· Edited @Model.MyReview.UpdatedAt.Value.ToLocalTime().ToString("dd MMM yyyy")</span> }</p> }
                 <details class="details-composer"><summary>@(Model.MyReview is null ? "Write a review" : "Edit your review")</summary>

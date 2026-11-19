@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PrivateLibrary.Data;
 using PrivateLibrary.Models;
+using PrivateLibrary.ViewModels;
 
 namespace PrivateLibrary.Controllers;
 
@@ -30,6 +31,44 @@ public class FavoritesController : Controller
 
         var favorites = await GetFavoritesQuery(userId.Value).ToListAsync();
         return View(favorites);
+    }
+
+    // Public ranking of the 20 books most frequently added to readers' favorites.
+    [AllowAnonymous]
+    [HttpGet]
+    public async Task<IActionResult> Popular()
+    {
+        var ranking = await _context.Favorites.AsNoTracking()
+            .GroupBy(f => f.BookId)
+            .Select(group => new
+            {
+                BookId = group.Key,
+                FavoritesCount = group.Count()
+            })
+            .OrderByDescending(item => item.FavoritesCount)
+            .ThenBy(item => item.BookId)
+            .Take(20)
+            .ToListAsync();
+
+        var bookIds = ranking.Select(item => item.BookId).ToList();
+        var books = await _context.Books.AsNoTracking()
+            .Where(book => bookIds.Contains(book.BookId))
+            .Include(book => book.Genre)
+            .Include(book => book.BookAuthors)
+                .ThenInclude(bookAuthor => bookAuthor.Author)
+            .ToDictionaryAsync(book => book.BookId);
+
+        var model = ranking
+            .Where(item => books.ContainsKey(item.BookId))
+            .Select((item, index) => new PopularBookViewModel
+            {
+                Book = books[item.BookId],
+                FavoritesCount = item.FavoritesCount,
+                Position = index + 1
+            })
+            .ToList();
+
+        return View(model);
     }
 
     // Public read-only collection. Only the owner can change visibility.

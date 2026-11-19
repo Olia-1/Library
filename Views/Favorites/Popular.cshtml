@@ -1,0 +1,72 @@
+@model IReadOnlyList<PrivateLibrary.ViewModels.PopularBookViewModel>
+@{
+    ViewData["Title"] = "Most Popular Books";
+}
+<section class="favorites-page popular-books-page">
+    <div class="favorites-heading">
+        <div>
+            <span class="account-eyebrow">READER FAVORITES</span>
+            <h1>Most Popular Books</h1>
+            <p>The 20 books readers have added to their favorites most often.</p>
+        </div>
+        <div class="favorites-total">
+            <strong>@Model.Count</strong>
+            <span>books in the ranking</span>
+        </div>
+    </div>
+
+    @if (Model.Count == 0)
+    {
+        <div class="favorites-empty">
+            <span class="favorites-empty-heart" aria-hidden="true">♡</span>
+            <h2>The ranking is waiting</h2>
+            <p>Books will appear here as readers add them to their favorites.</p>
+            <a asp-controller="Books" asp-action="Index" class="favorites-browse-button">Explore the catalog <span>→</span></a>
+        </div>
+    }
+    else
+    {
+        <div class="favorites-toolbar">
+            <span>Ranked by number of favorites</span>
+            <a asp-controller="Books" asp-action="Index">Explore the catalog <span>→</span></a>
+        </div>
+        <div class="favorites-grid">
+            @foreach (var item in Model)
+            {
+                var book = item.Book;
+                var authors = book.BookAuthors
+                    .Select(x => $"{x.Author?.FirstName} {x.Author?.LastName}".Trim())
+                    .Where(x => !string.IsNullOrWhiteSpace(x));
+                <article class="favorite-book-card popular-book-card">
+                    <span class="popular-book-rank" aria-label="Rank @item.Position">#@item.Position</span>
+                    <a asp-controller="Books" asp-action="Details" asp-route-id="@book.BookId" class="favorite-book-cover">
+                        @if (!string.IsNullOrWhiteSpace(book.CoverImageUrl))
+                        {
+                            <img src="@book.CoverImageUrl" alt="Cover of @book.Title" loading="lazy" />
+                        }
+                        else
+                        {
+                            <span class="favorite-cover-placeholder">✧</span>
+                        }
+                    </a>
+                    <div class="favorite-book-content">
+                        @if (book.Genre is not null)
+                        {
+                            <span class="favorite-book-genre">@book.Genre.Name</span>
+                        }
+                        <h2><a asp-controller="Books" asp-action="Details" asp-route-id="@book.BookId">@book.Title</a></h2>
+                        <p>@(authors.Any() ? string.Join(", ", authors) : "Author not specified")</p>
+                        <div class="popular-book-count">
+                            <span aria-hidden="true">♡</span>
+                            <strong>@item.FavoritesCount</strong>
+                            <span>@(item.FavoritesCount == 1 ? "reader's favorite" : "readers' favorites")</span>
+                        </div>
+                        <div class="favorite-book-actions">
+                            <a asp-controller="Books" asp-action="Details" asp-route-id="@book.BookId">View book <span>↗</span></a>
+                        </div>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</section>

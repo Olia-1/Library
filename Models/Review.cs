@@ -22,4 +22,6 @@ public class Review
 
     [Required, StringLength(20)]
     public string ModerationStatus { get; set; } = "Pending";
+
+    public ICollection<ReviewLike> Likes { get; set; } = new List<ReviewLike>();
 }

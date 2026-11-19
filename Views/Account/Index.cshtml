@@ -13,8 +13,8 @@
         <div class="account-sidebar-title">My Account</div>
         <a class="account-side-link active" href="#profile"><span>♙</span> My Profile</a>
         <a class="account-side-link" asp-controller="Reservations" asp-action="Index"><span>▤</span> My Reservations <b>@Model.ActiveReservationsCount</b></a>
-        <a class="account-side-link" href="#my-loans"><span>▣</span> My Loans <b>@Model.ActiveLoansCount</b></a>
-        <a class="account-side-link" href="#my-reviews"><span>✎</span> My Reviews <b>@Model.ReviewsCount</b></a>
+        <a class="account-side-link" asp-controller="Loans" asp-action="Index"><span>▣</span> My Loans <b>@Model.ActiveLoansCount</b></a>
+        <a class="account-side-link" asp-controller="Reviews" asp-action="Index"><span>✎</span> My Reviews <b>@Model.ReviewsCount</b></a>
         <a class="account-side-link" asp-controller="Favorites" asp-action="Index"><span>♡</span> My Favorites <b>@Model.FavoritesCount</b></a>
         <a class="account-side-link" asp-controller="Events" asp-action="MyEvents"><span>✧</span> My Events <b>@Model.EventsCount</b></a>
         <a class="account-side-link" asp-controller="Notifications" asp-action="Index"><span>♧</span> Notifications <b>@Model.UnreadNotificationsCount</b></a>
@@ -69,8 +69,8 @@
             <div class="account-overview-heading"><h2>Activity Overview</h2></div>
             <div class="account-overview-grid">
                 <a href="#my-reservations"><strong>@Model.ActiveReservationsCount</strong><span>Active Reservations</span></a>
-                <a href="#my-loans"><strong>@Model.ActiveLoansCount</strong><span>Books on Loan</span></a>
-                <a href="#my-reviews"><strong>@Model.ReviewsCount</strong><span>Reviews Written</span></a>
+                <a asp-controller="Loans" asp-action="Index"><strong>@Model.ActiveLoansCount</strong><span>Books on Loan</span></a>
+                <a asp-controller="Reviews" asp-action="Index"><strong>@Model.ReviewsCount</strong><span>Reviews Written</span></a>
                 <a href="#my-favorites"><strong>@Model.FavoritesCount</strong><span>Favorite Books</span></a>
             </div>
         </section>

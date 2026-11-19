@@ -24,26 +24,26 @@
             <strong>Book Catalog</strong>
             <span>Find your next<br />favorite book</span>
         </a>
-        <a class="feature-card" href="#events">
+        <a class="feature-card" asp-controller="Events" asp-action="Index">
             <span class="feature-icon feature-icon-green">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M7 3v4M17 3v4M3 10h18M8 14h3M8 17h3M15 14h1"></path></svg>
             </span>
             <strong>Events</strong>
             <span>Literary meetings<br />and activities</span>
         </a>
-        <a class="feature-card" href="#community">
+        <a class="feature-card" asp-controller="Community" asp-action="Index">
             <span class="feature-icon feature-icon-sand">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"></circle><path d="M3 20v-1.5A5.5 5.5 0 0 1 8.5 13h1A5.5 5.5 0 0 1 15 18.5V20zM16 5.5a3 3 0 0 1 0 5.8M18 13.5a4.5 4.5 0 0 1 3 4.3V20h-3"></path></svg>
             </span>
             <strong>Community</strong>
             <span>Discussions<br />and reviews</span>
         </a>
-        <a class="feature-card" asp-controller="Books" asp-action="Index">
+        <a class="feature-card" asp-controller="Favorites" asp-action="Popular">
             <span class="feature-icon feature-icon-green">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.8a5.4 5.4 0 0 0-7.6 0L12 6l-1.2-1.2a5.4 5.4 0 0 0-7.6 7.6L12 21l8.8-8.6a5.4 5.4 0 0 0 0-7.6Z"></path></svg>
             </span>
-            <strong>Favorites</strong>
-            <span>Save interesting<br />books</span>
+            <strong>Popular Books</strong>
+            <span>Most often added<br />to favorites</span>
         </a>
     </section>
 
@@ -100,10 +100,15 @@
 
     <section class="promo-grid" id="events">
         <article class="event-promo">
-            <div class="promo-copy"><span class="eyebrow">MEET. READ. CONNECT.</span><h2>Upcoming Events</h2><p>Join literary meetings, discussions and our reading club.</p><a class="btn-secondary-warm" asp-controller="Home" asp-action="Privacy">View events <span>→</span></a></div>
+            <div class="promo-copy"><span class="eyebrow">MEET. READ. CONNECT.</span><h2>Upcoming Events</h2><p>Join literary meetings, discussions and our reading club.</p><a class="btn-secondary-warm" asp-controller="Events" asp-action="Index">View events <span>→</span></a></div>
         </article>
-        <article class="community-promo" id="community">
-            <div><span class="eyebrow">YOUR PEOPLE, YOUR STORIES</span><h2>Be Part of<br />Our Community</h2><p>Share your thoughts, leave reviews, and discover new books together.</p><a class="community-link" asp-controller="Account" asp-action="Register">Join the community →</a></div>
-        </article>
+        <a class="community-promo" id="community" asp-controller="Community" asp-action="Index" aria-label="Explore the community">
+            <div>
+                <span class="eyebrow">YOUR PEOPLE, YOUR STORIES</span>
+                <h2>Be Part of<br />Our Community</h2>
+                <p>Share your thoughts, leave reviews, and discover new books together.</p>
+                <span class="community-link">Explore the community <span aria-hidden="true">→</span></span>
+            </div>
+        </a>
     </section>
 </div>

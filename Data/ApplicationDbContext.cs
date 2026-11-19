@@ -23,6 +23,7 @@ public class ApplicationDbContext
     public DbSet<Reservation> Reservations => Set<Reservation>();
     public DbSet<Loan> Loans => Set<Loan>();
     public DbSet<Review> Reviews => Set<Review>();
+    public DbSet<ReviewLike> ReviewLikes => Set<ReviewLike>();
     public DbSet<Rating> Ratings => Set<Rating>();
     public DbSet<Favorite> Favorites => Set<Favorite>();
     public DbSet<Event> Events => Set<Event>();
@@ -135,6 +136,21 @@ public class ApplicationDbContext
             .WithMany(x => x.Reviews)
             .HasForeignKey(x => x.UserId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<ReviewLike>(entity =>
+        {
+            entity.ToTable("review_likes");
+            entity.HasKey(x => new { x.ReviewId, x.UserId });
+            entity.Property(x => x.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.HasOne(x => x.Review)
+                .WithMany(x => x.Likes)
+                .HasForeignKey(x => x.ReviewId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
         builder.Entity<Review>()
             .HasOne(x => x.Book)

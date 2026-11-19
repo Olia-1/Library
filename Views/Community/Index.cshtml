@@ -1,0 +1,92 @@
+@model PrivateLibrary.ViewModels.CommunityViewModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Community";
+}
+<div class="community-page">
+    <section class="community-hero">
+        <span class="eyebrow">PRIVATE LIBRARY COMMUNITY</span>
+        <h1>Readers' Corner</h1>
+        <p>Discover what readers are saying, support their reviews, and find books that have inspired the community.</p>
+    </section>
+
+    <section class="community-section" aria-labelledby="latest-reviews-title">
+        <div class="community-section-heading">
+            <div><span class="eyebrow">FRESH FROM OUR READERS</span><h2 id="latest-reviews-title">Latest Reviews</h2><p>Recently published thoughts from the library community.</p></div>
+        </div>
+        @if (!Model.LatestReviews.Any())
+        {
+            <div class="community-empty"><h3>No published reviews yet</h3><p>When readers share approved reviews, they will appear here.</p></div>
+        }
+        else
+        {
+            <div class="community-review-grid">
+                @foreach (var review in Model.LatestReviews)
+                {
+                    <article class="community-review-card">
+                        <a class="community-review-book-cover" asp-controller="Books" asp-action="Details" asp-route-id="@review.BookId" aria-label="View @review.BookTitle">
+                            @if (!string.IsNullOrWhiteSpace(review.CoverImageUrl)) { <img src="@review.CoverImageUrl" alt="Cover of @review.BookTitle" loading="lazy" /> }
+                            else { <span aria-hidden="true">📖</span> }
+                        </a>
+                        <div class="community-review-content">
+                            <div class="community-review-meta"><span class="eyebrow">READER REVIEW</span><time datetime="@review.PublishedAt.ToString("yyyy-MM-dd")">@review.PublishedAt.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("en-GB"))</time></div>
+                            <h3><a asp-controller="Books" asp-action="Details" asp-route-id="@review.BookId">@review.BookTitle</a></h3>
+                            <a class="community-review-author" asp-controller="Profile" asp-action="Index" asp-route-id="@review.UserId">
+                                <span class="community-author-avatar" aria-hidden="true">@review.UserName</span>
+                                <span>@review.UserName</span>
+                            </a>
+                            <p class="community-review-text">@review.Text</p>
+                            <div class="community-review-actions">
+                                @if (Model.IsAuthenticatedReader)
+                                {
+                                    <form asp-controller="Community" asp-action="ToggleLike" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="reviewId" value="@review.ReviewId" />
+                                        <button class="community-like-button @(review.IsLikedByCurrentUser ? "is-liked" : "")" type="submit" aria-label="@(review.IsLikedByCurrentUser ? "Unlike review" : "Like review")">
+                                            <span aria-hidden="true">@(review.IsLikedByCurrentUser ? "♥" : "♡")</span>
+                                            <span>@review.LikesCount</span>
+                                        </button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <span class="community-like-count" title="Likes"><span aria-hidden="true">♡</span> @review.LikesCount</span>
+                                }
+                                <a class="community-read-link" asp-controller="Books" asp-action="Details" asp-route-id="@review.BookId">View book →</a>
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+        @if (User.Identity?.IsAuthenticated != true)
+        {
+            <p class="community-signin-note"><a asp-controller="Account" asp-action="Login">Log in</a> as a reader to like reviews.</p>
+        }
+    </section>
+
+    <section class="community-section community-rated-section" aria-labelledby="most-rated-title">
+        <div class="community-section-heading">
+            <div><span class="eyebrow">READER FAVORITES BY FEEDBACK</span><h2 id="most-rated-title">Most Rated Books</h2><p>Books with the highest number of approved reader ratings.</p></div>
+        </div>
+        @if (!Model.MostRatedBooks.Any())
+        {
+            <div class="community-empty"><h3>No ratings yet</h3><p>Approved book ratings will build this list.</p></div>
+        }
+        else
+        {
+            <div class="community-rated-grid">
+                @foreach (var book in Model.MostRatedBooks)
+                {
+                    <a class="community-rated-book" asp-controller="Books" asp-action="Details" asp-route-id="@book.BookId">
+                        <div class="community-rated-cover">
+                            @if (!string.IsNullOrWhiteSpace(book.CoverImageUrl)) { <img src="@book.CoverImageUrl" alt="Cover of @book.Title" loading="lazy" /> }
+                            else { <span aria-hidden="true">📖</span> }
+                        </div>
+                        <div class="community-rated-info"><h3>@book.Title</h3><p>@(string.IsNullOrWhiteSpace(book.Authors) ? "Unknown author" : book.Authors)</p><div class="community-rated-stats"><span class="community-average">✦ @book.AverageRating.ToString("0.0", CultureInfo.InvariantCulture)</span><span>@book.RatingsCount @(book.RatingsCount == 1 ? "rating" : "ratings")</span></div></div>
+                    </a>
+                }
+            </div>
+        }
+    </section>
+</div>

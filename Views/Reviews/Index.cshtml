@@ -1,0 +1,82 @@
+@model MyReviewsViewModel
+@{
+    ViewData["Title"] = "My Reviews";
+    var currentFilter = (Model.Filter ?? "all").ToLowerInvariant();
+}
+<div class="member-page-shell">
+    <div class="member-page-heading">
+        <span class="account-eyebrow">YOUR LIBRARY ACCOUNT</span>
+        <h1>My Reviews</h1>
+        <p>Your thoughts about the books you have read, all in one place.</p>
+    </div>
+
+    <div class="member-stat-grid member-review-stats">
+        <a class="member-stat-card @(currentFilter == "all" ? "is-selected" : "")" asp-action="Index" asp-route-filter="all">
+            <strong>@Model.TotalCount</strong><span>All reviews</span>
+        </a>
+        <a class="member-stat-card @(currentFilter == "pending" ? "is-selected" : "")" asp-action="Index" asp-route-filter="pending">
+            <strong>@Model.PendingCount</strong><span>Pending</span>
+        </a>
+        <a class="member-stat-card @(currentFilter == "published" ? "is-selected" : "")" asp-action="Index" asp-route-filter="published">
+            <strong>@Model.PublishedCount</strong><span>Published</span>
+        </a>
+        <a class="member-stat-card @(currentFilter == "rejected" ? "is-selected" : "")" asp-action="Index" asp-route-filter="rejected">
+            <strong>@Model.RejectedCount</strong><span>Rejected</span>
+        </a>
+    </div>
+
+
+    @if (Model.Reviews.Count == 0)
+    {
+        <section class="member-empty-panel">
+            <span aria-hidden="true">✧</span>
+            <h2>No reviews in this section</h2>
+            <p>After you write a review on a book page, it will appear here.</p>
+            <a class="member-primary-link" asp-controller="Books" asp-action="Index">Explore the catalog</a>
+        </section>
+    }
+    else
+    {
+        <div class="member-record-list">
+        @foreach (var review in Model.Reviews)
+        {
+            var authorNames = review.Book?.BookAuthors == null
+                ? "Author not specified"
+                : string.Join(", ", review.Book.BookAuthors.Select(a => $"{a.Author?.FirstName} {a.Author?.LastName}".Trim()));
+            var status = review.ModerationStatus ?? "Pending";
+            <article class="member-review-card">
+                <div class="member-review-heading">
+                    <div>
+                        <span class="member-record-eyebrow">BOOK REVIEW</span>
+                        <h2><a asp-controller="Books" asp-action="Details" asp-route-id="@review.BookId">@review.Book?.Title</a></h2>
+                        <p class="member-record-author">@authorNames</p>
+                    </div>
+                    <span class="member-status-pill @(status == "Approved" ? "is-returned" : status == "Rejected" ? "is-rejected" : "is-active")">@status</span>
+                </div>
+                <p class="member-review-text">@review.Text</p>
+                <div class="member-review-footer">
+                    <span>Submitted @((review.UpdatedAt ?? review.CreatedAt).ToLocalTime().ToString("dd MMM yyyy", System.Globalization.CultureInfo.GetCultureInfo("en-GB")))</span>
+                    <a class="member-text-link" asp-controller="Books" asp-action="Details" asp-route-id="@review.BookId">View book</a>
+                </div>
+                <details class="member-edit-review">
+                    <summary>Edit review</summary>
+                    <form asp-controller="Books" asp-action="SaveReview" method="post" class="member-edit-review-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="bookId" value="@review.BookId" />
+                        <label for="review-text-@review.ReviewId">Your review</label>
+                        <textarea id="review-text-@review.ReviewId" name="text" minlength="10" maxlength="5000" required>@review.Text</textarea>
+                        <small>10–5000 characters. Editing sends the review for moderation again.</small>
+                        <button type="submit" class="member-primary-link">Save changes</button>
+                    </form>
+                </details>
+                <form asp-controller="Books" asp-action="DeleteReview" method="post" class="member-delete-review-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@review.ReviewId" />
+                    <input type="hidden" name="bookId" value="@review.BookId" />
+                    <button type="submit" class="member-text-button">Delete review</button>
+                </form>
+            </article>
+        }
+        </div>
+    }
+</div>

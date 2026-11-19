@@ -1,0 +1,78 @@
+@model MyLoansViewModel
+@{
+    ViewData["Title"] = "My Loans";
+    var currentFilter = (Model.Filter ?? "all").ToLowerInvariant();
+}
+<div class="member-page-shell">
+    <div class="member-page-heading">
+        <span class="account-eyebrow">YOUR LIBRARY ACCOUNT</span>
+        <h1>My Loans</h1>
+        <p>Keep track of the books you have borrowed and their return dates.</p>
+    </div>
+
+    <div class="member-stat-grid member-review-stats">
+        <a class="member-stat-card @(currentFilter == "all" ? "is-selected" : "")" asp-action="Index" asp-route-filter="all">
+            <strong>@Model.TotalCount</strong><span>All loans</span>
+        </a>
+        <a class="member-stat-card @(currentFilter == "active" ? "is-selected" : "")" asp-action="Index" asp-route-filter="active">
+            <strong>@Model.ActiveCount</strong><span>Active</span>
+        </a>
+        <a class="member-stat-card @(currentFilter == "overdue" ? "is-selected" : "")" asp-action="Index" asp-route-filter="overdue">
+            <strong>@Model.OverdueCount</strong><span>Overdue</span>
+        </a>
+        <a class="member-stat-card @(currentFilter == "returned" ? "is-selected" : "")" asp-action="Index" asp-route-filter="returned">
+            <strong>@Model.ReturnedCount</strong><span>Returned</span>
+        </a>
+    </div>
+
+    @if (Model.Loans.Count == 0)
+    {
+        <section class="member-empty-panel">
+            <span aria-hidden="true">♧</span>
+            <h2>No loans in this section</h2>
+            <p>When you borrow a book from the library, it will appear here.</p>
+            <a class="member-primary-link" asp-controller="Books" asp-action="Index">Explore the catalog</a>
+        </section>
+    }
+    else
+    {
+        <div class="member-record-list">
+        @foreach (var loan in Model.Loans)
+        {
+            var isOverdue = loan.ReturnDate == null && loan.DueDate.Date < DateTime.Today;
+            var isReturned = loan.ReturnDate != null || loan.Status == "Returned" || loan.Status == "Completed";
+            var authors = loan.Copy?.Book?.BookAuthors == null
+                ? "Author not specified"
+                : string.Join(", ", loan.Copy.Book.BookAuthors.Select(a => $"{a.Author?.FirstName} {a.Author?.LastName}".Trim()));
+            <article class="member-record-card">
+                <div class="member-record-cover">
+                    @if (!string.IsNullOrWhiteSpace(loan.Copy?.Book?.CoverImageUrl))
+                    {
+                        <img src="@loan.Copy.Book.CoverImageUrl" alt="Cover of @loan.Copy.Book.Title" />
+                    }
+                    else { <span aria-hidden="true">✧</span> }
+                </div>
+                <div class="member-record-main">
+                    <span class="member-record-eyebrow">BORROWED BOOK</span>
+                    <h2><a asp-controller="Books" asp-action="Details" asp-route-id="@loan.Copy?.BookId">@loan.Copy?.Book?.Title</a></h2>
+                    <p class="member-record-author">@authors</p>
+                    <div class="member-record-meta">
+                        <span>Issued <strong>@loan.IssueDate.ToLocalTime().ToString("dd MMM yyyy", System.Globalization.CultureInfo.GetCultureInfo("en-GB"))</strong></span>
+                        @if (isReturned)
+                        {
+                            <span>Returned <strong>@loan.ReturnDate?.ToLocalTime().ToString("dd MMM yyyy", System.Globalization.CultureInfo.GetCultureInfo("en-GB"))</strong></span>
+                        }
+                        else
+                        {
+                            <span>Due date <strong>@loan.DueDate.ToLocalTime().ToString("dd MMM yyyy", System.Globalization.CultureInfo.GetCultureInfo("en-GB"))</strong></span>
+                        }
+                    </div>
+                </div>
+                <span class="member-status-pill @(isOverdue ? "is-overdue" : isReturned ? "is-returned" : "is-active")">
+                    @(isOverdue ? "Overdue" : isReturned ? "Returned" : "Active")
+                </span>
+            </article>
+        }
+        </div>
+    }
+</div>
