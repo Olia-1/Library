@@ -46,7 +46,8 @@ public class AccountController : Controller
             UnreadNotificationsCount = await _context.Notifications.CountAsync(n =>
                 n.UserId == user.Id && !n.IsRead),
             ActiveSubscription = await _context.Subscriptions
-                .Where(s => s.UserId == user.Id && s.Status == "Active" && s.EndDate > DateTime.UtcNow)
+                .Where(s => s.UserId == user.Id && s.Status == "Active" &&
+                            s.StartDate <= DateTime.UtcNow && s.EndDate > DateTime.UtcNow)
                 .Include(s => s.MembershipPlan)
                 .OrderByDescending(s => s.EndDate)
                 .FirstOrDefaultAsync(),

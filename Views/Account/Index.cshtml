@@ -7,6 +7,10 @@
     var avatarLetter = avatarSource[..1].ToUpperInvariant();
 }
 
+<style>
+.account-membership-link{color:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:7px;flex-wrap:wrap}
+.account-membership-link:hover{color:#805633;text-decoration:underline;text-underline-offset:3px}
+</style>
 <div class="account-page-container">
 <section class="account-dashboard">
     <aside class="account-sidebar" aria-label="Account navigation">
@@ -43,11 +47,19 @@
                     <div><span>Membership status</span>
                         @if (Model.ActiveSubscription is not null)
                         {
-                            <strong><span class="account-inline-status">Active</span> · @Model.ActiveSubscription.MembershipPlan.Name</strong>
+                            <strong>
+                                <a class="account-membership-link" asp-controller="Membership" asp-action="Plans">
+                                    <span class="account-inline-status">Active</span> · @Model.ActiveSubscription.MembershipPlan.Name · Manage
+                                </a>
+                            </strong>
                         }
                         else
                         {
-                            <strong><span class="account-inline-status inactive">No active membership</span></strong>
+                            <strong>
+                                <a class="account-membership-link" asp-controller="Membership" asp-action="Plans">
+                                    <span class="account-inline-status inactive">No active membership</span>
+                                </a>
+                            </strong>
                         }
                     </div>
                     @if (Model.ActiveSubscription is not null)

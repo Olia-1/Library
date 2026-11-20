@@ -1,0 +1,191 @@
+@model MembershipPlansViewModel
+@{
+    ViewData["Title"] = "Membership Plans";
+    var active = Model.ActiveSubscription;
+}
+<style>
+.membership-page{max-width:1120px;margin:36px auto 70px;padding:0 22px;color:#604832}
+.membership-hero{background:#fbf6ed;border:1px solid #eadcc8;border-radius:22px;padding:30px;margin-bottom:25px}
+.membership-eyebrow{font-size:12px;letter-spacing:2px;font-weight:700;color:#a77a50}
+.membership-hero h1{font-family:'Playfair Display',serif;font-size:34px;margin:8px 0;color:#604832}
+.membership-hero p{margin:0;color:#806c58;max-width:680px;line-height:1.65}
+.membership-status{display:inline-flex;gap:8px;align-items:center;margin-top:18px;padding:9px 13px;border-radius:30px;background:#eee5d8;color:#755338;font-size:13px}
+.membership-status.active{background:#e8efdf;color:#536a42}
+.membership-plan-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin:22px 0 32px}
+.membership-plan-card{background:#fffaf3;border:1px solid #e8dac7;border-radius:18px;padding:23px;display:flex;flex-direction:column;min-height:300px;box-shadow:0 5px 18px rgba(89,63,38,.04)}
+.membership-plan-card.featured{border:2px solid #9a704a;padding:22px}
+.membership-plan-card h2{font-family:'Playfair Display',serif;font-size:23px;margin:4px 0 8px}
+.membership-plan-description{color:#806c58;min-height:42px;font-size:14px;line-height:1.5}
+.membership-price{font-family:'Playfair Display',serif;font-size:34px;font-weight:700;color:#805633;margin:13px 0 3px}
+.membership-duration{font-size:13px;color:#8d765e}
+.membership-plan-features{margin:18px 0 22px;padding:0;list-style:none;color:#735a42;font-size:13px;display:grid;gap:8px}
+.membership-plan-features li:before{content:'✓';color:#78966a;font-weight:700;margin-right:8px}
+.membership-buy{margin-top:auto;width:100%;border:0;border-radius:10px;padding:12px 16px;background:#805633;color:#fffaf3;font-weight:700;cursor:pointer}
+.membership-buy:hover{background:#624127}\n.membership-buy-link{display:block;text-align:center;text-decoration:none}
+.membership-buy:disabled{background:#c8b9a7;cursor:not-allowed}
+.membership-test-note{margin:18px 0;padding:13px 16px;border:1px dashed #c6a47d;border-radius:12px;background:#fff8eb;color:#785b3e;font-size:13px;line-height:1.55}
+.membership-section{background:#fffaf3;border:1px solid #eadcc8;border-radius:18px;padding:22px;margin-top:22px}
+.membership-section h2{font-family:'Playfair Display',serif;font-size:22px;margin:0 0 16px}
+.membership-current{display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap;padding:15px;background:#f4efe5;border-radius:12px;color:#6d543b}
+.membership-payment-table{width:100%;border-collapse:collapse;font-size:13px}
+.membership-payment-table th,.membership-payment-table td{text-align:left;padding:12px 10px;border-bottom:1px solid #eee3d5}
+.membership-payment-table th{color:#8a7056;font-weight:600}
+.membership-payment-status{color:#536a42;font-weight:700}
+.membership-empty{padding:20px;text-align:center;color:#806c58;background:#fbf6ed;border-radius:12px}
+.membership-alert{padding:13px 16px;border-radius:11px;margin-bottom:18px;background:#e8efdf;border:1px solid #d4e0c8;color:#536a42}
+.membership-alert.error{background:#f8e9e4;border-color:#edd0c5;color:#914f3f}
+.membership-overview{background:#fffaf3;border:1px solid #eadcc8;border-radius:18px;padding:24px;margin:22px 0}
+.membership-overview h2{font-family:'Playfair Display',serif;font-size:24px;margin:0 0 20px;color:#604832}
+.membership-overview-stats{display:grid;grid-template-columns:minmax(180px,320px);gap:14px;margin-bottom:22px}
+.membership-overview-stat{background:#f4efe5;border-radius:13px;padding:16px 18px}
+.membership-overview-label{display:block;color:#806c58;font-size:13px;margin-bottom:7px}
+.membership-overview-value{font-family:'Playfair Display',serif;font-size:29px;font-weight:700;color:#604832}
+.membership-history-title{font-size:17px;font-weight:700;color:#604832;margin:0 0 12px}
+.membership-history-list{list-style:none;padding:0;margin:0;display:grid;gap:10px}
+.membership-history-item{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;padding:11px 0;border-bottom:1px solid #eee3d5;color:#735a42}
+.membership-history-item:last-child{border-bottom:0}
+.membership-history-plan{font-weight:600;color:#604832}
+.membership-history-meta{font-size:13px;color:#8a7056}
+.membership-valid-until{border-top:1px solid #eee3d5;margin-top:20px;padding-top:17px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.membership-valid-until strong{color:#604832}
+.membership-valid-until span{color:#805633;font-weight:700}
+
+@@media(max-width:800px){.membership-plan-grid{grid-template-columns:1fr}.membership-hero h1{font-size:28px}}
+@@media(max-width:560px){.membership-page{padding:0 14px;margin-top:20px}.membership-hero{padding:22px}.membership-section{padding:16px}.membership-payment-table{font-size:11px}.membership-payment-table th,.membership-payment-table td{padding:9px 5px}}
+</style>
+
+<main class="membership-page">
+    <section class="membership-hero">
+        <span class="membership-eyebrow">PRIVATE LIBRARY MEMBERSHIP</span>
+        <h1>Choose your membership</h1>
+        <p>Unlock member features and enjoy more ways to take part in library life. Select a plan below to continue.</p>
+        @if (active is not null)
+        {
+            <div class="membership-status active">
+                <strong>Active:</strong> @active.MembershipPlan.Name · valid until @active.EndDate.ToLocalTime().ToString("dd MMM yyyy")
+            </div>
+        }
+        else
+        {
+            <div class="membership-status">No active membership</div>
+        }
+    </section>
+
+
+    <section class="membership-overview">
+        <h2>Your Membership Overview</h2>
+
+        <div class="membership-overview-stats">
+            <div class="membership-overview-stat">
+                <span class="membership-overview-label">Total purchased</span>
+                <span class="membership-overview-value">@Model.TotalPurchasedDays days</span>
+            </div>
+        </div>
+
+        <h3 class="membership-history-title">Membership history</h3>
+        @if (Model.PurchasedMemberships.Count == 0)
+        {
+            <div class="membership-empty">You have no completed membership purchases yet.</div>
+        }
+        else
+        {
+            <ul class="membership-history-list">
+                @foreach (var purchase in Model.PurchasedMemberships)
+                {
+                    var subscription = purchase.Subscription;
+                    var purchaseStatus = subscription.EndDate <= DateTime.UtcNow
+                        ? "Expired"
+                        : subscription.StartDate > DateTime.UtcNow
+                            ? "Scheduled"
+                            : "Active";
+
+                    <li class="membership-history-item">
+                        <div>
+                            <span class="membership-history-plan">@subscription.MembershipPlan.Name</span>
+                            <span class="membership-history-meta"> — @subscription.MembershipPlan.DurationDays days</span>
+                        </div>
+                        <span class="membership-history-meta">@purchaseStatus</span>
+                    </li>
+                }
+            </ul>
+        }
+
+        <div class="membership-valid-until">
+            <strong>Membership valid until</strong>
+            @if (Model.MembershipValidUntil.HasValue)
+            {
+                <span>@Model.MembershipValidUntil.Value.ToLocalTime().ToString("dd MMM yyyy")</span>
+            }
+            else
+            {
+                <span>Not available</span>
+            }
+        </div>
+    </section>
+
+    <div class="membership-test-note">
+        <strong>TEST PAYMENT MODE</strong> — This is a test-only checkout. No real money will be charged. Use only the demonstration card details on the next page; never enter a real bank card.
+    </div>
+
+    @if (Model.Plans.Count == 0)
+    {
+        <div class="membership-empty">
+            No membership plans are currently available. Please contact the library administrator.
+        </div>
+    }
+    else
+    {
+        <section class="membership-plan-grid" aria-label="Available membership plans">
+            @for (var i = 0; i < Model.Plans.Count; i++)
+            {
+                var plan = Model.Plans[i];
+                <article class="membership-plan-card @(i == 1 ? "featured" : "")">
+                    @if (i == 1)
+                    {
+                        <span class="membership-eyebrow">POPULAR CHOICE</span>
+                    }
+                    <h2>@plan.Name</h2>
+                    <p class="membership-plan-description">@(!string.IsNullOrWhiteSpace(plan.Description) ? plan.Description : "Access to membership features at Private Library.")</p>
+                    <div class="membership-price">@plan.Price.ToString("N0") ₴</div>
+                    <div class="membership-duration">@plan.DurationDays days of membership</div>
+                    <ul class="membership-plan-features">
+                        <li>Member access to library features</li>
+                        <li>Digital payment record</li>
+                        <li>Membership period: @plan.DurationDays days</li>
+                    </ul>
+                    <a asp-action="Checkout" asp-route-planId="@plan.PlanId" class="membership-buy membership-buy-link">Continue to card verification</a>
+                </article>
+            }
+        </section>
+    }
+
+    <section class="membership-section">
+        <h2>Payment history</h2>
+        @if (Model.RecentPayments.Count == 0)
+        {
+            <div class="membership-empty">You have no membership payments yet.</div>
+        }
+        else
+        {
+            <div style="overflow-x:auto">
+                <table class="membership-payment-table">
+                    <thead>
+                        <tr><th>Date</th><th>Plan</th><th>Duration</th><th>Method</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var payment in Model.RecentPayments)
+                    {
+                        <tr>
+                            <td>@payment.PaymentDate.ToLocalTime().ToString("dd MMM yyyy")</td>
+                            <td>@payment.Subscription.MembershipPlan.Name</td>
+                            <td>@payment.Subscription.MembershipPlan.DurationDays days</td>
+                            <td>@payment.PaymentMethod</td>
+                            <td><span class="membership-payment-status">@payment.Status</span></td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+</main>
