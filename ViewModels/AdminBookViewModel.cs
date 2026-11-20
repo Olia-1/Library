@@ -69,3 +69,23 @@ public class AdminBookListItemViewModel
     public int AvailableCopies { get; set; }
     public bool IsArchived { get; set; }
 }
+
+
+public class BookCopyManagementViewModel
+{
+    public int BookId { get; set; }
+    public string BookTitle { get; set; } = string.Empty;
+    public bool IsArchived { get; set; }
+    public List<BookCopyItemViewModel> Copies { get; set; } = new();
+}
+
+public class BookCopyItemViewModel
+{
+    public int CopyId { get; set; }
+    public string InventoryNumber { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string? Condition { get; set; }
+    public string? Location { get; set; }
+    public int LoanCount { get; set; }
+    public bool CanDelete { get; set; }
+}

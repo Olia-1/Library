@@ -122,6 +122,7 @@
                             </form>
 
                             <div class="catalog-card-actions">
+                                <a asp-action="ManageCopies" asp-route-bookId="@book.BookId" class="catalog-edit">Manage copies</a>
                                 <a asp-action="EditBook" asp-route-id="@book.BookId" class="catalog-edit">Edit details</a>
                                 @if (book.IsArchived)
                                 {

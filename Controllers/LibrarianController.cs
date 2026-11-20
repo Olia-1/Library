@@ -646,6 +646,14 @@ public class LibrarianController : Controller
         if (book is null) return NotFound();
 
         var currentCount = book.Copies.Count;
+
+        if (targetCopyCount < currentCount)
+        {
+            TempData["Error"] =
+                "To reduce the number of copies, open Manage Copies and select the exact copy you want to remove.";
+            return RedirectToAction(nameof(ManageCopies), new { bookId });
+        }
+
         if (targetCopyCount > currentCount)
         {
             var existingNumbers = book.Copies.Select(c => c.InventoryNumber)
@@ -672,31 +680,85 @@ public class LibrarianController : Controller
                 });
                 currentCount++;
             }
-        }
-        else if (targetCopyCount < currentCount)
-        {
-            var copiesToRemove = currentCount - targetCopyCount;
-            var removableCopies = book.Copies
-                .Where(c => c.Status == "Available")
-                .OrderByDescending(c => c.InventoryNumber)
-                .Take(copiesToRemove)
-                .ToList();
 
-            if (removableCopies.Count < copiesToRemove)
-            {
-                var protectedCount = book.Copies.Count(c => c.Status != "Available");
-                TempData["Error"] =
-                    $"Cannot reduce the total to {targetCopyCount}. {protectedCount} copy/copies are currently reserved or loaned and cannot be removed.";
-                return RedirectToAction(nameof(Books));
-            }
-
-            _context.BookCopies.RemoveRange(removableCopies);
+            await _context.SaveChangesAsync();
         }
 
-        await _context.SaveChangesAsync();
-        TempData["Success"] = $"The copy count for '{book.Title}' is now {targetCopyCount}.";
+        TempData["Success"] = $"The copy count for '{book.Title}' is now {currentCount}.";
         return RedirectToAction(nameof(Books));
     }
+
+    [HttpGet]
+    public async Task<IActionResult> ManageCopies(int bookId)
+    {
+        var book = await _context.Books
+            .AsNoTracking()
+            .Include(b => b.Copies)
+                .ThenInclude(c => c.Loans)
+            .FirstOrDefaultAsync(b => b.BookId == bookId && !b.IsArchived);
+
+        if (book is null) return NotFound();
+
+        var model = new BookCopyManagementViewModel
+        {
+            BookId = book.BookId,
+            BookTitle = book.Title,
+            IsArchived = false,
+            Copies = book.Copies
+                .OrderBy(c => c.InventoryNumber)
+                .Select(c => new BookCopyItemViewModel
+                {
+                    CopyId = c.CopyId,
+                    InventoryNumber = c.InventoryNumber,
+                    Status = c.Status,
+                    Condition = c.Condition,
+                    Location = c.Location,
+                    LoanCount = c.Loans.Count,
+                    CanDelete = c.Status == "Available" && c.Loans.Count == 0
+                }).ToList()
+        };
+
+        return View(model);
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteBookCopy(int bookId, int copyId)
+    {
+        var copy = await _context.BookCopies
+            .Include(c => c.Book)
+            .Include(c => c.Loans)
+            .FirstOrDefaultAsync(c => c.CopyId == copyId && c.BookId == bookId);
+
+        if (copy is null || copy.Book.IsArchived)
+        {
+            TempData["Error"] = "The selected copy could not be found in the active catalog.";
+            return RedirectToAction(nameof(Books));
+        }
+
+        if (copy.Status != "Available" || copy.Loans.Count > 0)
+        {
+            TempData["Error"] =
+                $"Copy {copy.InventoryNumber} cannot be deleted because it is not an unused available copy or it has loan history.";
+            return RedirectToAction(nameof(ManageCopies), new { bookId });
+        }
+
+        var inventoryNumber = copy.InventoryNumber;
+        _context.BookCopies.Remove(copy);
+
+        try
+        {
+            await _context.SaveChangesAsync();
+            TempData["Success"] = $"Copy {inventoryNumber} was deleted.";
+        }
+        catch (DbUpdateException)
+        {
+            TempData["Error"] =
+                $"Copy {inventoryNumber} could not be deleted because another record refers to it. Its history has been preserved.";
+        }
+
+        return RedirectToAction(nameof(ManageCopies), new { bookId });
+    }
+
 
     private async Task SyncLibrarianBookAuthorsAsync(int bookId, string? authorNames)
     {
