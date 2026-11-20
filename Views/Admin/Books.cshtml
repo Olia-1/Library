@@ -1,0 +1,169 @@
+@model PrivateLibrary.ViewModels.AdminBookManagementViewModel
+@{
+    ViewData["Title"] = "Books & Catalog";
+}
+<style>
+.catalog-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:18px 0}
+.catalog-search{flex:1;min-width:220px}
+.catalog-search input,.catalog-toolbar select,.catalog-copy-form input{width:100%;padding:11px 13px;border:1px solid #e4d7c5;border-radius:10px;background:#fffaf2;color:#5d4938}
+.catalog-toolbar select{min-width:145px;width:auto}
+.catalog-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0}
+.catalog-stat{background:#f5eee3;border:1px solid #e9ddcb;border-radius:14px;padding:15px 18px;color:#66503c}
+.catalog-stat strong{display:block;font-size:24px}
+.catalog-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
+.catalog-tabs a{padding:9px 15px;border-radius:20px;background:#f3ecdf;color:#71583f;text-decoration:none}
+.catalog-tabs a.active{background:#76563b;color:white}
+.catalog-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px}
+.catalog-book-card{border:1px solid #eadfce;background:#fffaf3;border-radius:15px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.catalog-book-card.archived{opacity:.82;background:#f5f1e9}
+.catalog-book-card h3{margin:0;color:#604832;font-size:17px}
+.catalog-book-meta{font-size:13px;color:#806c58;line-height:1.6}
+.catalog-status{display:inline-block;padding:4px 9px;border-radius:20px;font-size:11px;background:#e8efdf;color:#536a42}
+.catalog-status.archived{background:#eee5dc;color:#795f4c}
+.catalog-card-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:auto}
+.catalog-card-actions a,.catalog-card-actions button{border:0;border-radius:8px;padding:8px 10px;text-decoration:none;font-size:12px;cursor:pointer}
+.catalog-edit{background:#eee3d4;color:#684c32}
+.catalog-archive{background:#e8efdf;color:#526943}
+.catalog-delete{background:#f4e3dd;color:#8a4d3b}
+.catalog-copy-form{display:flex;gap:8px;align-items:end;border-top:1px solid #eee3d5;padding-top:10px}
+.catalog-copy-form label{font-size:12px;color:#806c58;display:block;margin-bottom:4px}
+.catalog-copy-form input{width:85px;padding:8px}
+.catalog-empty{padding:35px;text-align:center;color:#806c58;background:#fbf6ed;border-radius:12px}
+.catalog-pagination{display:flex;justify-content:center;gap:8px;margin:22px 0}
+.catalog-pagination a,.catalog-pagination span{padding:8px 12px;border-radius:8px;background:#f2eadf;color:#674d35;text-decoration:none}
+.catalog-pagination .current{background:#76563b;color:#fff}
+@@media(max-width:650px){.catalog-stats{grid-template-columns:1fr}.catalog-toolbar select{flex:1}}
+</style>
+
+<div class="admin-shell">
+    <partial name="_AdminSidebar" />
+    <section class="admin-content">
+        <div class="admin-page-heading">
+            <div>
+                <span class="admin-eyebrow">CATALOG MANAGEMENT</span>
+                <h1>Books &amp; Catalog</h1>
+                <p>Search, organize, update and archive the library collection.</p>
+            </div>
+            <a asp-action="CreateBook" class="admin-small-action">+ Add book</a>
+        </div>
+
+        <div class="catalog-stats">
+            <div class="catalog-stat"><span>All books</span><strong>@(Model.ActiveCount + Model.ArchivedCount)</strong></div>
+            <div class="catalog-stat"><span>Active in catalog</span><strong>@Model.ActiveCount</strong></div>
+            <div class="catalog-stat"><span>Archived</span><strong>@Model.ArchivedCount</strong></div>
+        </div>
+
+        <nav class="catalog-tabs">
+            <a class="@(Model.Status == "active" ? "active" : "")" asp-action="Books" asp-route-status="active">Active (@Model.ActiveCount)</a>
+            <a class="@(Model.Status == "archived" ? "active" : "")" asp-action="Books" asp-route-status="archived">Archived (@Model.ArchivedCount)</a>
+            <a class="@(Model.Status == "all" ? "active" : "")" asp-action="Books" asp-route-status="all">All books</a>
+        </nav>
+
+        <form method="get" asp-action="Books" class="catalog-toolbar">
+            <input type="hidden" name="status" value="@Model.Status" />
+            <div class="catalog-search">
+                <input type="search" name="search" value="@Model.Search" placeholder="Search title, author, ISBN or publisher..." />
+            </div>
+            <select name="genreId">
+                <option value="">All genres</option>
+                @foreach (var genre in Model.Genres)
+                {
+                    <option value="@genre.GenreId" selected="@(Model.GenreId == genre.GenreId)">@genre.Name</option>
+                }
+            </select>
+            <select name="sort">
+                <option value="title" selected="@(Model.Sort == "title")">Title A–Z</option>
+                <option value="title_desc" selected="@(Model.Sort == "title_desc")">Title Z–A</option>
+                <option value="year_desc" selected="@(Model.Sort == "year_desc")">Newest year</option>
+                <option value="year_asc" selected="@(Model.Sort == "year_asc")">Oldest year</option>
+                <option value="copies_desc" selected="@(Model.Sort == "copies_desc")">Most copies</option>
+            </select>
+            <button type="submit" class="catalog-apply-button">Apply</button>
+            <a asp-action="Books" asp-route-status="@Model.Status" class="catalog-reset-link">Reset</a>
+        </form>
+<div class="admin-panel">
+            <div class="admin-panel-heading">
+                <h2>Books (@Model.TotalCount)</h2>
+            </div>
+
+            @if (Model.Books.Count == 0)
+            {
+                <div class="catalog-empty">No books match these filters. Try changing your search or filters.</div>
+            }
+            else
+            {
+                <div class="catalog-grid">
+                    @foreach (var book in Model.Books)
+                    {
+                        <article class="catalog-book-card @(book.IsArchived ? "archived" : "")">
+                            <div>
+                                <span class="catalog-status @(book.IsArchived ? "archived" : "")">
+                                    @(book.IsArchived ? "Archived" : "Active")
+                                </span>
+                            </div>
+                            <h3>@book.Title</h3>
+                            <div class="catalog-book-meta">
+                                <div><strong>Author:</strong> @(string.IsNullOrWhiteSpace(book.Authors) ? "Not specified" : book.Authors)</div>
+                                <div><strong>Genre:</strong> @book.GenreName</div>
+                                <div><strong>Year:</strong> @(book.PublicationYear?.ToString() ?? "—")</div>
+                                <div><strong>ISBN:</strong> @(book.ISBN ?? "—")</div>
+                                <div><strong>Publisher:</strong> @(book.Publisher ?? "—")</div>
+                                <div><strong>Copies:</strong> @book.AvailableCopies available / @book.TotalCopies total</div>
+                            </div>
+
+                            <form asp-action="UpdateBookCopies" method="post" class="catalog-copy-form">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="bookId" value="@book.BookId" />
+                                <div>
+                                    <label for="copies-@book.BookId">Total copies</label>
+                                    <input id="copies-@book.BookId" type="number" name="targetCopyCount" min="0" max="1000" value="@book.TotalCopies" />
+                                </div>
+                                <button type="submit" class="catalog-apply-button">Update</button>
+                            </form>
+
+                            <div class="catalog-card-actions">
+                                <a asp-action="EditBook" asp-route-id="@book.BookId" class="catalog-edit">Edit details</a>
+                                @if (book.IsArchived)
+                                {
+                                    <form asp-action="RestoreBook" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="bookId" value="@book.BookId" />
+                                        <button type="submit" class="catalog-archive">Restore</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form asp-action="ArchiveBook" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="bookId" value="@book.BookId" />
+                                        <button type="submit" class="catalog-archive">Archive</button>
+                                    </form>
+                                }
+                                <form asp-action="DeleteBook" method="post" onsubmit="return confirm('Delete this book permanently if it has no history? Otherwise it will be archived.');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="bookId" value="@book.BookId" />
+                                    <button type="submit" class="catalog-delete">Delete</button>
+                                </form>
+                            </div>
+                        </article>
+                    }
+                </div>
+
+                @if (Model.TotalPages > 1)
+                {
+                    <nav class="catalog-pagination" aria-label="Catalog pages">
+                        @if (Model.Page > 1)
+                        {
+                            <a asp-action="Books" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-genreId="@Model.GenreId" asp-route-sort="@Model.Sort" asp-route-page="@(Model.Page - 1)">Previous</a>
+                        }
+                        <span class="current">@Model.Page / @Model.TotalPages</span>
+                        @if (Model.Page < Model.TotalPages)
+                        {
+                            <a asp-action="Books" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-genreId="@Model.GenreId" asp-route-sort="@Model.Sort" asp-route-page="@(Model.Page + 1)">Next</a>
+                        }
+                    </nav>
+                }
+            }
+        </div>
+    </section>
+</div>

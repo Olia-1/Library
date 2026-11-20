@@ -1,0 +1,11 @@
+@{ ViewData["Title"] = "Moderation"; }
+<div class="admin-shell"><partial name="_AdminSidebar" /><section class="admin-content">
+    <div class="admin-page-heading"><div><span class="admin-eyebrow">CONTENT MODERATION</span><h1>Moderation</h1><p>Choose a content type to moderate.</p></div></div>
+    <section class="admin-panel">
+        <div class="admin-panel-heading"><h2>Ratings &amp; Reviews</h2></div>
+        <p>Ratings and written reviews have separate moderation queues.</p>
+        <p><a asp-action="Ratings">Open Ratings moderation →</a></p>
+        <p><a asp-action="Reviews">Open Reviews moderation →</a></p>
+        <p><a asp-action="Events">Open Events moderation →</a></p>
+    </section>
+</section></div>

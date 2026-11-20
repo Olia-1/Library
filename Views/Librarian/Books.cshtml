@@ -1,0 +1,117 @@
+@model PrivateLibrary.ViewModels.AdminBookManagementViewModel
+@{
+    ViewData["Title"] = "Books & Catalog";
+}
+<style>
+.librarian-catalog-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:18px 0}
+.librarian-catalog-search{flex:1;min-width:220px}
+.librarian-catalog-search input,.librarian-catalog-toolbar select,.librarian-copy-form input{width:100%;padding:11px 13px;border:1px solid #e4d7c5;border-radius:10px;background:#fffaf2;color:#5d4938}
+.librarian-catalog-toolbar select{min-width:145px;width:auto}
+.librarian-catalog-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px}
+.librarian-catalog-card{border:1px solid #eadfce;background:#fffaf3;border-radius:15px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.librarian-catalog-card h3{margin:0;color:#604832;font-size:17px}
+.librarian-catalog-meta{font-size:13px;color:#806c58;line-height:1.6}
+.librarian-book-actions-row{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;border-top:1px solid #eee3d5;padding-top:12px;margin-top:auto}
+.librarian-copy-form{display:flex;align-items:flex-end;gap:8px;margin:0}
+.librarian-copy-form label{font-size:12px;color:#806c58;display:block;margin-bottom:5px}
+.librarian-copy-form input{display:block;box-sizing:border-box;width:105px;height:44px;padding:8px 11px;border:1px solid #e4d7c5;border-radius:10px;background:#fffaf2;color:#5d4938}
+.librarian-catalog-empty{padding:35px;text-align:center;color:#806c58;background:#fbf6ed;border-radius:12px}
+.librarian-book-actions-row a,.librarian-copy-form button{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;height:44px;min-height:44px;border:0;border-radius:9px;padding:0 16px;text-decoration:none;font-size:12px;font-weight:600;white-space:nowrap;cursor:pointer;background:#805633;color:#fffaf3;transition:background .18s ease}
+.librarian-book-actions-row a:hover,.librarian-copy-form button:hover{background:#624127;color:#fff}
+.librarian-copy-form button{margin:0}
+.librarian-catalog-pagination{display:flex;justify-content:center;gap:8px;margin:22px 0}
+.librarian-catalog-pagination a,.librarian-catalog-pagination span{padding:8px 12px;border-radius:8px;background:#f2eadf;color:#674d35;text-decoration:none}
+.librarian-catalog-pagination .current{background:#76563b;color:#fff}
+@@media(max-width:650px){.librarian-catalog-toolbar select{flex:1}}
+</style>
+
+<div class="librarian-shell">
+    <partial name="_LibrarianSidebar" />
+    <section class="librarian-content">
+        <div class="librarian-heading">
+            <div>
+                <span class="librarian-eyebrow">CATALOG MANAGEMENT</span>
+                <h1>Books &amp; Catalog</h1>
+                <p>Find books, update their details and manage physical copies.</p>
+            </div>
+            <a asp-action="CreateBook" class="librarian-primary-link">+ Add book</a>
+        </div>
+
+        <form method="get" asp-action="Books" class="librarian-catalog-toolbar">
+            <div class="librarian-catalog-search">
+                <input type="search" name="search" value="@Model.Search" placeholder="Search title, author, ISBN or publisher..." />
+            </div>
+            <select name="genreId">
+                <option value="">All genres</option>
+                @foreach (var genre in Model.Genres)
+                {
+                    <option value="@genre.GenreId" selected="@(Model.GenreId == genre.GenreId)">@genre.Name</option>
+                }
+            </select>
+            <select name="sort">
+                <option value="title" selected="@(Model.Sort == "title")">Title A–Z</option>
+                <option value="title_desc" selected="@(Model.Sort == "title_desc")">Title Z–A</option>
+                <option value="year_desc" selected="@(Model.Sort == "year_desc")">Newest year</option>
+                <option value="year_asc" selected="@(Model.Sort == "year_asc")">Oldest year</option>
+                <option value="copies_desc" selected="@(Model.Sort == "copies_desc")">Most copies</option>
+            </select>
+            <button type="submit" class="librarian-primary-link">Apply</button>
+            <a asp-action="Books" class="catalog-reset-link">Reset</a>
+        </form>
+
+        <section class="librarian-panel">
+            <div class="librarian-panel-heading">
+                <h2>Active books (@Model.TotalCount)</h2>
+            </div>
+            @if (Model.Books.Count == 0)
+            {
+                <div class="librarian-catalog-empty">No books match these filters. Try changing your search or filters.</div>
+            }
+            else
+            {
+                <div class="librarian-catalog-grid">
+                    @foreach (var book in Model.Books)
+                    {
+                        <article class="librarian-catalog-card">
+                            <h3>@book.Title</h3>
+                            <div class="librarian-catalog-meta">
+                                <div><strong>Author:</strong> @(string.IsNullOrWhiteSpace(book.Authors) ? "Not specified" : book.Authors)</div>
+                                <div><strong>Genre:</strong> @book.GenreName</div>
+                                <div><strong>Year:</strong> @(book.PublicationYear?.ToString() ?? "—")</div>
+                                <div><strong>ISBN:</strong> @(book.ISBN ?? "—")</div>
+                                <div><strong>Publisher:</strong> @(book.Publisher ?? "—")</div>
+                                <div><strong>Copies:</strong> @book.AvailableCopies available / @book.TotalCopies total</div>
+                            </div>
+                            <div class="librarian-book-actions-row">
+                                <form asp-action="UpdateBookCopies" method="post" class="librarian-copy-form">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="bookId" value="@book.BookId" />
+                                    <div>
+                                        <label for="librarian-copies-@book.BookId">Total copies</label>
+                                        <input id="librarian-copies-@book.BookId" type="number" name="targetCopyCount" min="0" max="1000" value="@book.TotalCopies" />
+                                    </div>
+                                    <button type="submit">Update</button>
+                                </form>
+                                <a asp-action="EditBook" asp-route-id="@book.BookId">Edit details</a>
+                            </div>
+                        </article>
+                    }
+                </div>
+                @if (Model.TotalPages > 1)
+                {
+                    <nav class="librarian-catalog-pagination" aria-label="Catalog pages">
+                        @if (Model.Page > 1)
+                        {
+                            <a asp-action="Books" asp-route-search="@Model.Search" asp-route-genreId="@Model.GenreId" asp-route-sort="@Model.Sort" asp-route-page="@(Model.Page - 1)">Previous</a>
+                        }
+                        <span class="current">@Model.Page / @Model.TotalPages</span>
+                        @if (Model.Page < Model.TotalPages)
+                        {
+                            <a asp-action="Books" asp-route-search="@Model.Search" asp-route-genreId="@Model.GenreId" asp-route-sort="@Model.Sort" asp-route-page="@(Model.Page + 1)">Next</a>
+                        }
+                    </nav>
+                }
+            }
+        </section>
+    </section>
+</div>

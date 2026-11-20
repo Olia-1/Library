@@ -25,6 +25,8 @@ public class Book
     [StringLength(2048)]
     public string? CoverImageUrl { get; set; }
 
+    public bool IsArchived { get; set; } = false;
+
     public int? GenreId { get; set; }
     public Genre? Genre { get; set; }
 

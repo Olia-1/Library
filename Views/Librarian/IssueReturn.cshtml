@@ -1,0 +1,327 @@
+@model PrivateLibrary.ViewModels.LibrarianIssueReturnViewModel
+
+@{
+
+    ViewData["Title"] = "Issue / Return Books";
+
+    var selectedBook = Model.Books.FirstOrDefault(b => b.BookId == Model.SelectedBookId);
+
+    var isReturnTab = Model.ActiveTab == "return";
+
+}
+
+<div class="librarian-shell">
+
+    <partial name="_LibrarianSidebar" />
+
+    <section class="librarian-content">
+
+        <div class="librarian-heading">
+
+            <div>
+
+                <span class="librarian-eyebrow">CIRCULATION DESK</span>
+
+                <h1>Issue / Return Books</h1>
+
+                <p>Issue books to readers and register book returns.</p>
+
+            </div>
+
+        </div>
+
+
+
+        <nav class="librarian-tabs" aria-label="Book circulation actions">
+
+            <a asp-action="IssueReturn" asp-route-tab="issue" class="@(!isReturnTab ? "active" : "")" aria-current="@(!isReturnTab ? "page" : null)">Issue Book</a>
+
+            <a asp-action="IssueReturn" asp-route-tab="return" class="@(isReturnTab ? "active" : "")" aria-current="@(isReturnTab ? "page" : null)">Return Book</a>
+
+        </nav>
+
+
+
+        @if (!isReturnTab)
+
+        {
+
+        <section class="librarian-panel librarian-issue-panel">
+
+            <h2>Issue a Book to a Reader</h2>
+
+            <form asp-action="IssueReturn" method="get" class="librarian-search-form">
+
+                <input type="hidden" name="tab" value="issue" />
+
+                <div class="librarian-search-block">
+
+                    <label for="readerSearch">Reader</label>
+
+                    <div class="librarian-search-control"><span>⌕</span><input id="readerSearch" name="readerSearch" value="@Model.ReaderSearch" placeholder="Search by username, name or reader ID..." /></div>
+
+                </div>
+
+                <div class="librarian-search-block">
+
+                    <label for="bookSearch">Book</label>
+
+                    <div class="librarian-search-control"><span>⌕</span><input id="bookSearch" name="bookSearch" value="@Model.BookSearch" placeholder="Search by title, author or ISBN..." /></div>
+
+                </div>
+
+                <button class="librarian-search-button" type="submit">Search</button>
+
+            </form>
+
+
+
+            <form asp-action="IssueBook" method="post" class="librarian-issue-form">
+
+                @Html.AntiForgeryToken()
+
+                <div class="librarian-selection-grid">
+
+                    <div class="librarian-selection-column">
+
+                        <div class="librarian-field-heading"><h3>Select reader</h3><span>@Model.Readers.Count found</span></div>
+
+                        @if (Model.Readers.Count == 0)
+
+                        {
+
+                            <div class="librarian-empty">No active readers found. Try another search.</div>
+
+                        }
+
+                        else
+
+                        {
+
+                            <div class="librarian-choice-list">
+
+                            @foreach (var reader in Model.Readers)
+
+                            {
+
+                                <label class="librarian-reader-choice">
+
+                                    <input type="radio" name="readerId" value="@reader.UserId" checked="@(Model.SelectedReaderId == reader.UserId)" required />
+
+                                    <span class="librarian-avatar">@(string.IsNullOrWhiteSpace(reader.FullName) ? reader.UserName[..1].ToUpperInvariant() : reader.FullName[..1].ToUpperInvariant())</span>
+
+                                    <span class="librarian-choice-copy"><strong>@reader.UserName</strong><small>@reader.FullName</small><small>Reader ID: @reader.UserId</small></span>
+
+                                </label>
+
+                            }
+
+                            </div>
+
+                        }
+
+                    </div>
+
+                    <div class="librarian-selection-column">
+
+                        <div class="librarian-field-heading"><h3>Select book and copy</h3><span>@Model.Books.Count books found</span></div>
+
+                        @if (Model.Books.Count == 0)
+
+                        {
+
+                            <div class="librarian-empty">No books found. Try another search.</div>
+
+                        }
+
+                        else
+
+                        {
+
+                            <div class="librarian-book-choice-list">
+
+                            @foreach (var book in Model.Books)
+
+                            {
+
+                                <article class="librarian-book-choice @(Model.SelectedBookId == book.BookId ? "selected" : "")">
+
+                                    <div class="librarian-book-summary">
+
+                                        @if (!string.IsNullOrWhiteSpace(book.CoverImageUrl))
+
+                                        {
+
+                                            <img src="@book.CoverImageUrl" alt="" />
+
+                                        }
+
+                                        else
+
+                                        {
+
+                                            <span class="librarian-book-placeholder">▤</span>
+
+                                        }
+
+                                        <div><strong>@book.Title</strong><small>@book.Authors</small><small>ISBN: @(string.IsNullOrWhiteSpace(book.Isbn) ? "—" : book.Isbn)</small></div>
+
+                                    </div>
+
+                                    @if (book.Copies.Count == 0)
+
+                                    {
+
+                                        <p class="librarian-no-copies">No available copies.</p>
+
+                                    }
+
+                                    else
+
+                                    {
+
+                                        <div class="librarian-copy-list">
+
+                                            @foreach (var copy in book.Copies)
+
+                                            {
+
+                                                <label class="librarian-copy-choice">
+
+                                                    <input type="radio" name="copyId" value="@copy.CopyId" checked="@(Model.SelectedCopyId == copy.CopyId)" required />
+
+                                                    <span>@copy.InventoryNumber</span>
+
+                                                    <span>@copy.Condition</span>
+
+                                                    <span>@copy.Location</span>
+
+                                                    <em class="@(copy.Status == "Reserved" ? "reserved" : "")">@copy.Status</em>
+
+                                                </label>
+
+                                            }
+
+                                        </div>
+
+                                    }
+
+                                </article>
+
+                            }
+
+                            </div>
+
+                        }
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="librarian-issue-footer">
+
+                    <div><label for="dueDate">Due date</label><input type="date" id="dueDate" name="dueDate" value="@Model.DueDate.ToString("yyyy-MM-dd")" min="@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")" required /></div>
+
+                    <button class="librarian-primary-button" type="submit">Issue Book</button>
+
+                </div>
+
+            </form>
+
+            <p class="librarian-note">Only available copies and copies reserved for the selected reader can be issued. The reader must have an active membership.</p>
+
+        </section>
+
+        }
+
+        else
+
+        {
+
+        <section class="librarian-panel librarian-borrowed-panel" id="borrowed-books">
+
+            <div class="librarian-panel-heading"><div><h2>Register a Book Return</h2></div><span class="librarian-muted">@Model.ActiveLoans.Count active records</span></div>
+
+            <form asp-action="IssueReturn" method="get" class="librarian-loan-search">
+
+                <input type="hidden" name="tab" value="return" />
+
+                <div class="librarian-search-control"><span>⌕</span><input name="loanSearch" value="@Model.LoanSearch" placeholder="Search by reader name, username, book title or copy ID..." /></div>
+
+                <button type="submit">Search</button>
+
+            </form>
+
+            @if (Model.ActiveLoans.Count == 0)
+
+            {
+
+                <div class="librarian-empty">There are no active loans matching your search.</div>
+
+            }
+
+            else
+
+            {
+
+                <div class="librarian-table-wrap">
+
+                    <table class="librarian-table">
+
+                        <thead><tr><th>Book title</th><th>Reader</th><th>Copy ID</th><th>Issue date</th><th>Due date</th><th>Status</th><th>Action</th></tr></thead>
+
+                        <tbody>
+
+                        @foreach (var loan in Model.ActiveLoans)
+
+                        {
+
+                            <tr>
+
+                                <td><strong>@loan.BookTitle</strong></td>
+
+                                <td>@loan.UserName<small>@loan.ReaderName</small></td>
+
+                                <td>@loan.CopyNumber</td>
+
+                                <td>@loan.IssueDate.ToLocalTime().ToString("dd/MM/yyyy")</td>
+
+                                <td>@loan.DueDate.ToLocalTime().ToString("dd/MM/yyyy")</td>
+
+                                <td><span class="librarian-status @(loan.Status == "Overdue" ? "overdue" : "")">@loan.Status</span></td>
+
+                                <td>
+
+                                    <form asp-action="RegisterReturn" method="post">
+
+                                        @Html.AntiForgeryToken()
+
+                                        <input type="hidden" name="loanId" value="@loan.LoanId" />
+
+                                        <button class="librarian-return-button" type="submit">Register Return</button>
+
+                                    </form>
+
+                                </td>
+
+                            </tr>
+
+                        }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            }
+
+        </section>
+
+        }
+
+    </section>
+
+</div>

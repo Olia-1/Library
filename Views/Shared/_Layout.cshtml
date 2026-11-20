@@ -20,13 +20,23 @@
 
     // All transient feedback uses the same Private Library toast. It is UI feedback only;
     // it does not create or modify records in the Notifications center.
-    var toastMessage = TempData["Error"] as string;
+    // Read every transient message key on each request so an older message
+    // cannot remain in TempData and appear on an unrelated page later.
+    var adminErrorMessage = TempData["AdminError"] as string;
+    var errorMessage = TempData["Error"] as string;
+    var adminSuccessMessage = TempData["AdminMessage"] as string;
+    var successMessage = TempData["Success"] as string;
+    var eventMessage = TempData["EventMessage"] as string;
+
+    var toastMessage = adminErrorMessage ?? errorMessage;
     var toastType = "error";
+
     if (string.IsNullOrWhiteSpace(toastMessage))
     {
-        toastMessage = TempData["Success"] as string ?? TempData["EventMessage"] as string;
+        toastMessage = adminSuccessMessage ?? successMessage ?? eventMessage;
         toastType = "success";
     }
+
     if (string.IsNullOrWhiteSpace(toastMessage))
     {
         toastMessage = Context.Request.Query["message"].ToString() switch
@@ -55,6 +65,14 @@
             <div class="nav-links" id="navLinks">
                 <a asp-controller="Books" asp-action="Index">Catalog</a>
                 <a asp-controller="Events" asp-action="Index">Events</a>
+                @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Librarian"))
+                {
+                    <a class="nav-admin-link" asp-controller="Librarian" asp-action="Index">Librarian Panel</a>
+                }
+                @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Admin"))
+                {
+                    <a class="nav-admin-link" asp-controller="Admin" asp-action="Index">Admin Panel</a>
+                }
                 <a asp-controller="Home" asp-action="Privacy">About</a>
             </div>
             <form class="nav-search" asp-controller="Books" asp-action="Index" method="get">

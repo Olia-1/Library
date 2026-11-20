@@ -48,7 +48,7 @@ public class ReservationsController : Controller
             return RedirectToAction("Details", "Books", new { id = bookId });
         }
 
-        var bookExists = await _context.Books.AnyAsync(b => b.BookId == bookId);
+        var bookExists = await _context.Books.AnyAsync(b => b.BookId == bookId && !b.IsArchived);
         if (!bookExists) return NotFound();
 
         var activeStatuses = new[] { "Pending", "Ready" };

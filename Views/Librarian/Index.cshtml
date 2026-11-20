@@ -1,0 +1,70 @@
+@model PrivateLibrary.ViewModels.LibrarianDashboardViewModel
+@{
+    ViewData["Title"] = "Librarian Dashboard";
+}
+<div class="librarian-shell">
+    <partial name="_LibrarianSidebar" />
+    <section class="librarian-content">
+        <div class="librarian-heading">
+            <div>
+                <span class="librarian-eyebrow">PRIVATE LIBRARY OPERATIONS</span>
+                <h1>Librarian Dashboard</h1>
+                <p>Manage book circulation and help readers with their library visits.</p>
+            </div>
+            <span class="librarian-role-pill">Librarian</span>
+        </div>
+
+        <div class="librarian-stat-grid">
+            <article class="librarian-stat-card"><span class="stat-symbol">▣</span><div><strong>@Model.TotalBooks</strong><span>Books in catalog</span></div></article>
+            <article class="librarian-stat-card"><span class="stat-symbol">▤</span><div><strong>@Model.TotalCopies</strong><span>Total copies</span></div></article>
+            <article class="librarian-stat-card"><span class="stat-symbol">✓</span><div><strong>@Model.AvailableCopies</strong><span>Available copies</span></div></article>
+            <article class="librarian-stat-card"><span class="stat-symbol">⇄</span><div><strong>@Model.ActiveLoans</strong><span>Books on loan</span></div></article>
+            <article class="librarian-stat-card librarian-stat-warning"><span class="stat-symbol">!</span><div><strong>@Model.OverdueLoans</strong><span>Overdue returns</span></div></article>
+        </div>
+
+        <div class="librarian-dashboard-grid">
+            <section class="librarian-panel">
+                <div class="librarian-panel-heading"><h2>Reservations</h2><a asp-action="Reservations">View reservations →</a></div>
+                <div class="librarian-reservation-summary">
+                    <div><strong>@Model.ReadyReservations</strong><span>Ready for pickup</span></div>
+                    <div><strong>@Model.PendingReservations</strong><span>Waiting list</span></div>
+                </div>
+                <a class="librarian-primary-link" asp-action="Reservations">Open reservations</a>
+            </section>
+            <section class="librarian-panel">
+                <div class="librarian-panel-heading"><h2>Book circulation</h2></div>
+                <p class="librarian-panel-copy">Issue available copies to readers and register returned books.</p>
+                <a class="librarian-primary-link" asp-action="IssueReturn">Issue / Return Books</a>
+            </section>
+        </div>
+
+        <section class="librarian-panel librarian-recent-panel">
+            <div class="librarian-panel-heading"><h2>Recent book activity</h2><a asp-action="IssueReturn">Manage loans →</a></div>
+            @if (Model.RecentLoans.Count == 0)
+            {
+                <div class="librarian-empty">No book loans have been registered yet.</div>
+            }
+            else
+            {
+                <div class="librarian-table-wrap">
+                    <table class="librarian-table">
+                        <thead><tr><th>Book</th><th>Reader</th><th>Copy ID</th><th>Issue date</th><th>Due date</th><th>Status</th></tr></thead>
+                        <tbody>
+                        @foreach (var loan in Model.RecentLoans)
+                        {
+                            <tr>
+                                <td><strong>@loan.BookTitle</strong></td>
+                                <td>@loan.ReaderName <small>@loan.UserName</small></td>
+                                <td>@loan.CopyNumber</td>
+                                <td>@loan.IssueDate.ToLocalTime().ToString("dd/MM/yyyy")</td>
+                                <td>@loan.DueDate.ToLocalTime().ToString("dd/MM/yyyy")</td>
+                                <td><span class="librarian-status @(loan.Status == "Overdue" ? "overdue" : loan.Status == "Returned" ? "returned" : "")">@loan.Status</span></td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+    </section>
+</div>

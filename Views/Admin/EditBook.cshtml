@@ -1,0 +1,78 @@
+@model PrivateLibrary.ViewModels.AdminBookViewModel
+@{
+    ViewData["Title"] = "Edit Book";
+}
+<div class="admin-shell">
+    <partial name="_AdminSidebar" />
+    <section class="admin-content">
+        <div class="admin-page-heading">
+            <div>
+                <span class="admin-eyebrow">CATALOG MANAGEMENT</span>
+                <h1>Edit book</h1>
+                <p>Update the book details. Manage physical copy quantities from the catalog card.</p>
+            </div>
+        </div>
+
+        <form asp-action="EditBook" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="BookId" />
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <section class="admin-panel">
+                <div class="catalog-filter-grid">
+                    <div class="catalog-field">
+                        <label asp-for="Title"></label>
+                        <input asp-for="Title" />
+                        <span asp-validation-for="Title" class="text-danger"></span>
+                    </div>
+                    <div class="catalog-field">
+                        <label asp-for="AuthorNames"></label>
+                        <textarea asp-for="AuthorNames" rows="3" placeholder="Jane Austen&#10;George Orwell"></textarea>
+                        <span asp-validation-for="AuthorNames" class="text-danger"></span>
+                        <small>Enter one author per line. Existing authors will be reused.</small>
+                    </div>
+                    <div class="catalog-field">
+                        <label asp-for="GenreId">Genre</label>
+                        <select asp-for="GenreId">
+                            <option value="">No genre</option>
+                            @foreach (var genre in (IEnumerable<PrivateLibrary.Models.Genre>)ViewBag.BookGenres)
+                            {
+                                <option value="@genre.GenreId">@genre.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="catalog-field">
+                        <label asp-for="ISBN"></label>
+                        <input asp-for="ISBN" />
+                        <span asp-validation-for="ISBN" class="text-danger"></span>
+                    </div>
+                    <div class="catalog-field">
+                        <label asp-for="PublicationYear"></label>
+                        <input asp-for="PublicationYear" type="number" min="0" max="2100" />
+                        <span asp-validation-for="PublicationYear" class="text-danger"></span>
+                    </div>
+                    <div class="catalog-field">
+                        <label asp-for="Publisher"></label>
+                        <input asp-for="Publisher" />
+                    </div>
+                    <div class="catalog-field">
+                        <label asp-for="Language"></label>
+                        <input asp-for="Language" />
+                    </div>
+                    <div class="catalog-field">
+                        <label asp-for="CoverImageUrl">Cover image URL</label>
+                        <input asp-for="CoverImageUrl" />
+                        <span asp-validation-for="CoverImageUrl" class="text-danger"></span>
+                    </div>
+                    <div class="catalog-field" style="grid-column:1/-1">
+                        <label asp-for="Description"></label>
+                        <textarea asp-for="Description" rows="5"></textarea>
+                    </div>
+                </div>
+                <div class="catalog-filter-actions">
+                    <a asp-action="Books" class="catalog-reset-link">Cancel</a>
+                    <button type="submit" class="catalog-apply-button">Save changes</button>
+                </div>
+            </section>
+        </form>
+    </section>
+</div>

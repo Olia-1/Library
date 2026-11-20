@@ -1,0 +1,84 @@
+@model PrivateLibrary.ViewModels.AdminCreateUserViewModel
+
+@{
+    ViewData["Title"] = "Create User";
+}
+
+<div class="admin-shell">
+    <partial name="_AdminSidebar" />
+
+    <section class="admin-content">
+        <div class="admin-page-heading">
+            <div>
+                <span class="admin-eyebrow">LIBRARY ACCOUNTS</span>
+                <h1>Create New User</h1>
+                <p>Add a reader, librarian or administrator to your library.</p>
+            </div>
+            <a class="admin-primary-button" asp-controller="Admin" asp-action="Users">
+                Back to users
+            </a>
+        </div>
+
+        <section class="admin-panel admin-form-panel">
+            <div class="admin-panel-heading">
+                <h2>Account details</h2>
+                <span class="admin-muted">All fields except email are required</span>
+            </div>
+
+            <form asp-controller="Admin" asp-action="CreateUser" method="post" class="admin-create-user-form">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="admin-validation-summary"></div>
+
+                <div class="admin-form-grid">
+                    <div class="admin-form-field">
+                        <label asp-for="UserName"></label>
+                        <input asp-for="UserName" autocomplete="off" placeholder="Enter username" />
+                        <span asp-validation-for="UserName" class="admin-field-error"></span>
+                    </div>
+
+                    <div class="admin-form-field">
+                        <label asp-for="Email"></label>
+                        <input asp-for="Email" type="email" autocomplete="off" placeholder="name@example.com" />
+                        <span asp-validation-for="Email" class="admin-field-error"></span>
+                    </div>
+
+                    <div class="admin-form-field">
+                        <label asp-for="Password"></label>
+                        <input asp-for="Password" autocomplete="new-password" placeholder="At least 8 characters" />
+                        <span asp-validation-for="Password" class="admin-field-error"></span>
+                    </div>
+
+                    <div class="admin-form-field">
+                        <label asp-for="ConfirmPassword"></label>
+                        <input asp-for="ConfirmPassword" autocomplete="new-password" placeholder="Repeat password" />
+                        <span asp-validation-for="ConfirmPassword" class="admin-field-error"></span>
+                    </div>
+
+                    <div class="admin-form-field">
+                        <label asp-for="Role">Account role</label>
+                        <select asp-for="Role">
+                            <option value="Reader">Reader</option>
+                            <option value="Librarian">Librarian</option>
+                            <option value="Admin">Admin</option>
+                        </select>
+                        <span asp-validation-for="Role" class="admin-field-error"></span>
+                    </div>
+                </div>
+
+                <p class="admin-form-note">
+                    The password is securely hashed by ASP.NET Identity. The selected role controls
+                    which parts of the library system the new account can access.
+                </p>
+
+                <div class="admin-form-actions">
+                    <a class="admin-secondary-button" asp-controller="Admin" asp-action="Users">Cancel</a>
+                    <button type="submit" class="admin-primary-button">Create User</button>
+                </div>
+            </form>
+        </section>
+    </section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

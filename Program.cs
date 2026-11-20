@@ -4,10 +4,14 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using PrivateLibrary.Data;
 using PrivateLibrary.Models;
+using PrivateLibrary.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<NotificationMaintenanceService>();
+builder.Services.AddHostedService<NotificationReminderWorker>();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException(

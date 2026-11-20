@@ -24,6 +24,7 @@ public class BooksController : Controller
     {
         var query = _context.Books
             .AsNoTracking()
+            .Where(b => !b.IsArchived)
             .Include(b => b.Genre)
             .Include(b => b.BookAuthors).ThenInclude(ba => ba.Author)
             .Include(b => b.Copies)
@@ -81,7 +82,7 @@ public class BooksController : Controller
             .Include(b => b.Genre)
             .Include(b => b.BookAuthors).ThenInclude(ba => ba.Author)
             .Include(b => b.Copies)
-            .FirstOrDefaultAsync(b => b.BookId == id);
+            .FirstOrDefaultAsync(b => b.BookId == id && !b.IsArchived);
 
         if (book is null)
             return NotFound();
@@ -147,7 +148,7 @@ public class BooksController : Controller
             return RedirectToAction(nameof(Details), new { id = bookId });
         }
 
-        if (!await _context.Books.AnyAsync(b => b.BookId == bookId))
+        if (!await _context.Books.AnyAsync(b => b.BookId == bookId && !b.IsArchived))
             return NotFound();
 
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -202,7 +203,7 @@ public class BooksController : Controller
             return RedirectToAction(nameof(Details), new { id = bookId });
         }
 
-        if (!await _context.Books.AnyAsync(b => b.BookId == bookId))
+        if (!await _context.Books.AnyAsync(b => b.BookId == bookId && !b.IsArchived))
             return NotFound();
 
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
