@@ -27,13 +27,14 @@
     var adminSuccessMessage = TempData["AdminMessage"] as string;
     var successMessage = TempData["Success"] as string;
     var eventMessage = TempData["EventMessage"] as string;
+    var accountSuccessMessage = TempData["AccountSuccess"] as string;
 
     var toastMessage = adminErrorMessage ?? errorMessage;
     var toastType = "error";
 
     if (string.IsNullOrWhiteSpace(toastMessage))
     {
-        toastMessage = adminSuccessMessage ?? successMessage ?? eventMessage;
+        toastMessage = adminSuccessMessage ?? successMessage ?? eventMessage ?? accountSuccessMessage;
         toastType = "success";
     }
 
@@ -49,6 +50,7 @@
         toastType = "info";
     }
 }
+
 @if (!isAuthPage)
 {
     <header class="site-header">
@@ -59,6 +61,15 @@
                aria-label="Private Library home">
                <span>Library</span>
             </a>
+<div class="language-switcher" aria-label="Language">
+    <form asp-controller="Language" asp-action="Set" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+        <button type="submit" name="culture" value="en" class="@(Context.Request.Cookies[".AspNetCore.Culture"]?.Contains("en") == true || !Context.Request.Cookies.ContainsKey(".AspNetCore.Culture") ? "active" : "")">EN</button>
+        <span aria-hidden="true">|</span>
+        <button type="submit" name="culture" value="uk" class="@(Context.Request.Cookies[".AspNetCore.Culture"]?.Contains("uk") == true ? "active" : "")">УКР</button>
+    </form>
+</div>
             <button class="nav-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false" aria-controls="navLinks">
                 <span></span><span></span><span></span>
             </button>
@@ -73,7 +84,6 @@
                 {
                     <a class="nav-admin-link" asp-controller="Admin" asp-action="Index">Admin Panel</a>
                 }
-                <a asp-controller="Home" asp-action="Privacy">About</a>
             </div>
             <form class="nav-search" asp-controller="Books" asp-action="Index" method="get">
                 <input type="search" name="search" placeholder="Search books, authors..." aria-label="Search books and authors" />
@@ -131,14 +141,14 @@
 @if (!isAuthPage)
 {
     <footer class="site-footer">
-        <div class="footer-brand"><span>Library</span></div>
-        <p>A quiet place for curious minds.</p>
-        <span>© @DateTime.Now.Year Private Library</span>
+        <a class="footer-brand footer-policy-brand" asp-controller="Home" asp-action="Privacy"><span>Library Policy</span></a>
+        <span class="footer-copyright">© @DateTime.Now.Year Private Library</span>
     </footer>
 }
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>
+<script src="~/js/localization.js" asp-append-version="true"></script>
 @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -1,4 +1,8 @@
+using System.Diagnostics;
 using System.Globalization;
+using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<BookCatalogService>();
 builder.Services.AddScoped<NotificationMaintenanceService>();
 builder.Services.AddHostedService<NotificationReminderWorker>();
 
@@ -69,16 +74,21 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
+    app.UseHttpsRedirection();
 }
 
-app.UseHttpsRedirection();
-
 var englishCulture = CultureInfo.GetCultureInfo("en-GB");
+var ukrainianCulture = CultureInfo.GetCultureInfo("uk-UA");
 var localizationOptions = new RequestLocalizationOptions
 {
     DefaultRequestCulture = new RequestCulture(englishCulture),
-    SupportedCultures = new[] { englishCulture },
-    SupportedUICultures = new[] { englishCulture }
+    SupportedCultures = new[] { englishCulture, ukrainianCulture },
+    SupportedUICultures = new[] { englishCulture, ukrainianCulture },
+    RequestCultureProviders =
+    {
+        new CookieRequestCultureProvider(),
+        new AcceptLanguageHeaderRequestCultureProvider()
+    }
 };
 app.UseRequestLocalization(localizationOptions);
 
@@ -93,5 +103,71 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
+
+app.Lifetime.ApplicationStarted.Register(() =>
+{
+    const int httpPort = 5100;
+    var localUrl = $"http://localhost:{httpPort}";
+
+    Console.WriteLine();
+    Console.WriteLine("==================================================");
+    Console.WriteLine(" PrivateLibrary is running");
+    Console.WriteLine("==================================================");
+    Console.WriteLine($"Local address:  http://localhost:{httpPort}");
+    Console.WriteLine($"Local address:  http://127.0.0.1:{httpPort}");
+
+    var localAddresses = NetworkInterface.GetAllNetworkInterfaces()
+        .Where(network =>
+            network.OperationalStatus == OperationalStatus.Up &&
+            network.NetworkInterfaceType != NetworkInterfaceType.Loopback)
+        .SelectMany(network => network.GetIPProperties().UnicastAddresses)
+        .Where(address =>
+            address.Address.AddressFamily == AddressFamily.InterNetwork &&
+            !IPAddress.IsLoopback(address.Address) &&
+            !address.Address.ToString().StartsWith("169.254."))
+        .Select(address => address.Address.ToString())
+        .Distinct()
+        .OrderBy(address => address)
+        .ToList();
+
+    if (localAddresses.Count == 0)
+    {
+        Console.WriteLine("No local network IPv4 address was found.");
+        Console.WriteLine("Connect this computer to Wi-Fi or Ethernet and restart the application.");
+    }
+    else
+    {
+        Console.WriteLine();
+        Console.WriteLine("Open from another device on the same Wi-Fi/LAN:");
+
+        foreach (var address in localAddresses)
+        {
+            Console.WriteLine($"  http://{address}:{httpPort}");
+        }
+    }
+
+    Console.WriteLine("==================================================");
+    Console.WriteLine();
+
+    // 0.0.0.0 is a listening address, not a browser destination.
+    // Open the local site through localhost after Kestrel has started.
+    if (app.Environment.IsDevelopment())
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = localUrl,
+                UseShellExecute = true
+            });
+            Console.WriteLine($"Browser opened: {localUrl}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Could not open the browser automatically: {ex.Message}");
+            Console.WriteLine($"Open the site manually: {localUrl}");
+        }
+    }
+});
 
 app.Run();

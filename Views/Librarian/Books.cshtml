@@ -83,7 +83,6 @@
                                 <div><strong>Copies:</strong> @book.AvailableCopies available / @book.TotalCopies total</div>
                             </div>
                             <div class="librarian-book-actions-row">
-                                <a asp-action="ManageCopies" asp-route-bookId="@book.BookId">Manage copies</a>
                                 <form asp-action="UpdateBookCopies" method="post" class="librarian-copy-form">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="bookId" value="@book.BookId" />

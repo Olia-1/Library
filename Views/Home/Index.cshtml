@@ -1,3 +1,4 @@
+@using System.Globalization
 @model IEnumerable<PrivateLibrary.Models.Book>
 
 @{
@@ -49,8 +50,7 @@
 
     <section class="popular-section">
         <div class="section-heading">
-            <div><span class="eyebrow">READY TO BORROW</span><h2>Available Books</h2></div>
-            <a asp-controller="Books" asp-action="Index" class="text-link">View all <span>→</span></a>
+            <div><h2>Available Books</h2></div>
         </div>
 
         @if (Model == null || !Model.Any())
@@ -66,16 +66,25 @@
             <div class="book-grid">
                 @foreach (var book in Model)
                 {
+                    var languageCode = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+                    var translatedTitle = book.Translations.FirstOrDefault(t => t.LanguageCode == languageCode)?.Title ?? book.Title;
                     var authors = string.Join(", ", book.BookAuthors
-                        .Select(x => $"{x.Author?.FirstName} {x.Author?.LastName}".Trim())
+                        .Select(x =>
+                        {
+                            var authorTranslation = x.Author?.Translations.FirstOrDefault(t => t.LanguageCode == languageCode);
+                            var firstName = authorTranslation?.FirstName ?? x.Author?.FirstName;
+                            var lastName = authorTranslation?.LastName ?? x.Author?.LastName;
+                            return $"{firstName} {lastName}".Trim();
+                        })
                         .Where(x => !string.IsNullOrWhiteSpace(x)));
+                    var genreName = book.Genre?.Translations.FirstOrDefault(t => t.LanguageCode == languageCode)?.Name ?? book.Genre?.Name;
                     var availableCopies = book.Copies.Count(copy => copy.Status == "Available");
-                    <a class="home-book-link" asp-controller="Books" asp-action="Details" asp-route-id="@book.BookId" aria-label="View details for @book.Title">
+                    <a class="home-book-link" asp-controller="Books" asp-action="Details" asp-route-id="@book.BookId" aria-label="View details for @translatedTitle">
                         <article class="book-card home-book-card">
                             <div class="book-cover">
                                 @if (!string.IsNullOrWhiteSpace(book.CoverImageUrl))
                                 {
-                                    <img src="@book.CoverImageUrl" alt="Cover of @book.Title" loading="lazy" />
+                                    <img src="@book.CoverImageUrl" alt="Cover of @translatedTitle" loading="lazy" />
                                 }
                                 else
                                 {
@@ -83,12 +92,12 @@
                                 }
                             </div>
                             <div class="book-info">
-                                <h3>@book.Title</h3>
+                                <h3>@translatedTitle</h3>
                                 <p>@(string.IsNullOrWhiteSpace(authors) ? "Unknown author" : authors)</p>
                                 <span class="home-availability">@availableCopies @(availableCopies == 1 ? "copy" : "copies") available</span>
                                 @if (book.Genre != null)
                                 {
-                                    <span class="genre-pill">@book.Genre.Name</span>
+                                    <span class="genre-pill">@genreName</span>
                                 }
                             </div>
                         </article>
@@ -99,15 +108,18 @@
     </section>
 
     <section class="promo-grid" id="events">
-        <article class="event-promo">
-            <div class="promo-copy"><span class="eyebrow">MEET. READ. CONNECT.</span><h2>Upcoming Events</h2><p>Join literary meetings, discussions and our reading club.</p><a class="btn-secondary-warm" asp-controller="Events" asp-action="Index">View events <span>→</span></a></div>
-        </article>
+        <a class="event-promo" asp-controller="Events" asp-action="Index" aria-label="View upcoming library events">
+            <div class="promo-copy">
+                <span class="eyebrow">MEET. READ. CONNECT.</span>
+                <h2>Upcoming Events</h2>
+                <p>Join literary meetings, discussions and our reading club.</p>
+            </div>
+        </a>
         <a class="community-promo" id="community" asp-controller="Community" asp-action="Index" aria-label="Explore the community">
             <div>
                 <span class="eyebrow">YOUR PEOPLE, YOUR STORIES</span>
                 <h2>Be Part of<br />Our Community</h2>
                 <p>Share your thoughts, leave reviews, and discover new books together.</p>
-                <span class="community-link">Explore the community <span aria-hidden="true">→</span></span>
             </div>
         </a>
     </section>

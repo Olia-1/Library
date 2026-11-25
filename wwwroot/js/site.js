@@ -1,5 +1,59 @@
 // Responsive navigation menu
 document.addEventListener("DOMContentLoaded", () => {
+
+    // Replace browser-native validation bubbles with the branded Private Library toast.
+    // Native constraint validation is disabled visually only; checkValidity() still
+    // enforces the same required/type/range rules before a form can be submitted.
+    const toastElement = document.getElementById("siteToast");
+    const toastTextElement = document.getElementById("siteToastMessage");
+    let validationToastTimer = null;
+
+    const currentLanguageIsUkrainian = () => {
+        const cultureCookie = document.cookie.split("; ").find(value => value.startsWith(".AspNetCore.Culture="));
+        return cultureCookie
+            ? decodeURIComponent(cultureCookie.split("=")[1]).toLowerCase().includes("uk")
+            : (document.documentElement.lang || "en").toLowerCase().startsWith("uk");
+    };
+
+    const showPrivateLibraryToast = (message, type = "error") => {
+        if (!toastElement || !toastTextElement) return;
+
+        toastTextElement.textContent = message;
+        toastElement.classList.toggle("site-toast-error", type === "error");
+        toastElement.classList.toggle("site-toast-success", type !== "error");
+        toastElement.hidden = false;
+        requestAnimationFrame(() => toastElement.classList.add("is-visible"));
+
+        window.clearTimeout(validationToastTimer);
+        validationToastTimer = window.setTimeout(() => {
+            toastElement.classList.remove("is-visible");
+            window.setTimeout(() => { toastElement.hidden = true; }, 220);
+        }, 2000);
+    };
+
+    document.querySelectorAll("form").forEach(form => {
+        // Prevent Chrome/Edge's unstyled "Please select one..." tooltip.
+        form.noValidate = true;
+    });
+
+    document.addEventListener("submit", event => {
+        const form = event.target;
+        if (!(form instanceof HTMLFormElement)) return;
+
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+
+            const firstInvalid = form.querySelector(":invalid");
+            const message = currentLanguageIsUkrainian()
+                ? "Перевірте обов’язкові поля та правильність введених даних."
+                : "Please complete the required fields and check the entered values.";
+
+            showPrivateLibraryToast(message, "error");
+            firstInvalid?.focus({ preventScroll: true });
+            firstInvalid?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+    }, true);
     const toggle = document.querySelector(".nav-toggle");
     const nav = document.querySelector("#navLinks");
     if (toggle && nav) {
@@ -263,20 +317,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const toastType = autoToast.dataset.siteToastType || "success";
         const toastMark = document.getElementById("siteToastMark");
 
-        siteToastMessage.textContent = autoToast.dataset.siteToastMessage || "Your changes have been saved.";
-        siteToast.classList.toggle("site-toast-error", toastType === "error");
-        siteToast.classList.toggle("site-toast-success", toastType !== "error");
         if (toastMark) toastMark.textContent = "❧";
-
-        siteToast.hidden = false;
-        requestAnimationFrame(() => siteToast.classList.add("is-visible"));
-
-        window.setTimeout(() => {
-            siteToast.classList.remove("is-visible");
-            window.setTimeout(() => {
-                siteToast.hidden = true;
-            }, 220);
-        }, 2000);
+        showPrivateLibraryToast(
+            autoToast.dataset.siteToastMessage || "Your changes have been saved.",
+            toastType
+        );
     }
 
 

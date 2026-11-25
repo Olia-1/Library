@@ -7,19 +7,6 @@
 }
 <section class="events-page event-details-page">
     <a class="events-back-link" asp-action="Index">← Back to events</a>
-    @if (Context.Request.Query["message"] == "full")
-    {
-        <div class="events-alert">Sorry, all places for this event have been booked.</div>
-    }
-    else if (Context.Request.Query["message"] == "closed")
-    {
-        <div class="events-alert">Registration for this event is closed.</div>
-    }
-    else if (Context.Request.Query["message"] == "already")
-    {
-        <div class="events-alert">You are already registered for this event.</div>
-    }
-
     <article class="event-detail-card">
         <div class="event-detail-heading">
             <span class="events-eyebrow">PRIVATE LIBRARY EVENT</span>
@@ -36,7 +23,8 @@
         </div>
         @if (Model.IsOrganizer && Model.ModerationStatus != "Approved")
         {
-            <div class="events-alert">Your event is awaiting moderation. Readers will be able to register after it is approved.</div>
+            <div hidden data-site-toast-autoshow="true" data-site-toast-type="info"
+                 data-site-toast-message="Your event is awaiting moderation. Readers will be able to register after it is approved."></div>
         }
         <div class="event-detail-actions">
             @if (Model.IsOrganizer)

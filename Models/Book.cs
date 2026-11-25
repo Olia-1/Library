@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 
 namespace PrivateLibrary.Models;
 
@@ -36,4 +37,16 @@ public class Book
     public ICollection<Review> Reviews { get; set; } = new List<Review>();
     public ICollection<Rating> Ratings { get; set; } = new List<Rating>();
     public ICollection<Favorite> Favorites { get; set; } = new List<Favorite>();
+    public ICollection<BookTranslation> Translations { get; set; } = new List<BookTranslation>();
+
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public string DisplayTitle => IsUkrainian && Translations.FirstOrDefault(t => t.LanguageCode == "uk") is { } translation
+        ? translation.Title : Title;
+
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public string? DisplayDescription => IsUkrainian
+        ? Translations.FirstOrDefault(t => t.LanguageCode == "uk")?.Description ?? Description
+        : Description;
+
+    private static bool IsUkrainian => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "uk";
 }

@@ -21,8 +21,11 @@ public class HomeController : Controller
         var availableBooks = await _context.Books
             .AsNoTracking()
             .Include(b => b.Genre)
+                .ThenInclude(g => g!.Translations)
+            .Include(b => b.Translations)
             .Include(b => b.BookAuthors)
                 .ThenInclude(ba => ba.Author)
+                    .ThenInclude(a => a.Translations)
             .Include(b => b.Copies)
             .Where(b => b.Copies.Any(copy => copy.Status == "Available"))
             .OrderByDescending(b => b.Copies.Count(copy => copy.Status == "Available"))

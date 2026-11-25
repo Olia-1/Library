@@ -1,8 +1,8 @@
 @model PrivateLibrary.ViewModels.BookDetailsViewModel
 @{
-    ViewData["Title"] = Model.Book.Title;
+    ViewData["Title"] = Model.Book.DisplayTitle;
     var book = Model.Book;
-    var authors = book.BookAuthors.Select(x => $"{x.Author?.FirstName} {x.Author?.LastName}".Trim())
+    var authors = book.BookAuthors.Select(x => x.Author?.DisplayFullName ?? string.Empty)
         .Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
     var availableCopies = book.Copies.Count(c => string.Equals(c.Status, "Available", StringComparison.OrdinalIgnoreCase));
 }
@@ -12,8 +12,8 @@
         <div class="details-cover-column">
             <div class="details-cover-shell">
                 <div class="details-cover">
-                    @if (!string.IsNullOrWhiteSpace(book.CoverImageUrl)) { <img src="@book.CoverImageUrl" alt="Cover of @book.Title" /> }
-                    else { <div class="details-cover-placeholder"><span class="details-cover-mark">✦</span><span class="details-cover-title">@book.Title</span><span class="details-cover-author">@(authors.Count > 0 ? string.Join(", ", authors) : "Private Library Collection")</span></div> }
+                    @if (!string.IsNullOrWhiteSpace(book.CoverImageUrl)) { <img src="@book.CoverImageUrl" alt="Cover of @book.DisplayTitle" /> }
+                    else { <div class="details-cover-placeholder"><span class="details-cover-mark">✦</span><span class="details-cover-title">@book.DisplayTitle</span><span class="details-cover-author">@(authors.Count > 0 ? string.Join(", ", authors) : "Private Library Collection")</span></div> }
                 </div>
                 @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Reader"))
                 {
@@ -46,8 +46,8 @@
         </div>
         <div class="details-content">
             <div class="details-kicker">THE PRIVATE LIBRARY COLLECTION</div>
-            @if (book.Genre is not null) { <span class="details-genre">@book.Genre.Name</span> }
-            <h1>@book.Title</h1>
+            @if (book.Genre is not null) { <span class="details-genre">@book.Genre.DisplayName</span> }
+            <h1>@book.DisplayTitle</h1>
             <p class="details-author">by @(authors.Count > 0 ? string.Join(", ", authors) : "Unknown author")</p>
             <div class="details-rating-row">
                 @if (Model.CanViewCommunityContent && Model.ApprovedRatings.Count > 0)
@@ -58,14 +58,14 @@
             </div>
             <div class="details-divider"></div>
             <h2>About this book</h2>
-            <p class="details-description">@(string.IsNullOrWhiteSpace(book.Description) ? "A description for this title has not been added yet." : book.Description)</p>
+            <p class="details-description">@(string.IsNullOrWhiteSpace(book.DisplayDescription) ? "A description for this title has not been added yet." : book.DisplayDescription)</p>
             <h2 class="details-info-heading">Book information</h2>
             <dl class="details-meta-grid">
                 <div><dt>Publication year</dt><dd>@(book.PublicationYear?.ToString() ?? "Not specified")</dd></div>
                 <div><dt>Publisher</dt><dd>@(book.Publisher ?? "Not specified")</dd></div>
                 <div><dt>Language</dt><dd>@(book.Language ?? "Not specified")</dd></div>
                 <div><dt>ISBN</dt><dd>@(book.ISBN ?? "Not specified")</dd></div>
-                <div><dt>Genre</dt><dd>@(book.Genre?.Name ?? "Not specified")</dd></div>
+                <div><dt>Genre</dt><dd>@(book.Genre?.DisplayName ?? "Not specified")</dd></div>
                 <div><dt>Library copies</dt><dd>@book.Copies.Count</dd></div>
             </dl>
         </div>
@@ -96,7 +96,7 @@
                 }
                 @if (Model.MyRating is not null) { <p class="details-moderation-note">Your rating: @Model.MyRating.Value/5 · @Model.MyRating.ModerationStatus</p> }
                 <details class="details-composer"><summary>@(Model.MyRating is null ? "Leave a rating" : "Edit your rating")</summary>
-                    <form asp-action="SaveRating" method="post" class="details-opinion-form details-compact-form">
+                    <form asp-action="SaveRating" method="post" class="details-opinion-form details-compact-form" novalidate data-opinion-form="rating">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="bookId" value="@book.BookId" />
                         <fieldset class="laurel-rating-picker"><legend>Your rating</legend>
@@ -115,7 +115,9 @@
                             </span><small>@i</small></label>
                         }
                         </fieldset>
-                        <label for="ratingText">Optional note</label><textarea id="ratingText" name="text" maxlength="500" rows="2" placeholder="A short thought about this book...">@Model.MyRating?.Text</textarea>
+                        <label for="ratingText">Optional note</label><textarea id="ratingText" name="text" maxlength="30" rows="2" aria-describedby="ratingTextError" placeholder="A short thought about this book...">@Model.MyRating?.Text</textarea>
+                        <span id="ratingTextError" class="details-field-error" role="alert" aria-live="polite"></span>
+                        <small class="details-character-count" data-count-for="ratingText">0 / 30</small>
                         <button type="submit" class="details-reserve-button">@(Model.MyRating is null ? "Submit rating" : "Update rating")</button>
                     </form>
                 </details>
@@ -133,11 +135,13 @@
                 }
                 @if (Model.MyReview is not null) { <p class="details-moderation-note">Your review status: @Model.MyReview.ModerationStatus @if (Model.MyReview.UpdatedAt.HasValue) { <span>· Edited @Model.MyReview.UpdatedAt.Value.ToLocalTime().ToString("dd MMM yyyy")</span> }</p> }
                 <details class="details-composer"><summary>@(Model.MyReview is null ? "Write a review" : "Edit your review")</summary>
-                    <form asp-action="SaveReview" method="post" class="details-opinion-form details-compact-form">
+                    <form asp-action="SaveReview" method="post" class="details-opinion-form details-compact-form" novalidate data-opinion-form="review">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="bookId" value="@book.BookId" />
                         <label for="reviewText">Your review</label>
-                        <textarea id="reviewText" name="text" rows="3" minlength="10" maxlength="5000" placeholder="Share what you thought about this book..." required>@Model.MyReview?.Text</textarea>
+                        <textarea id="reviewText" name="text" rows="3" minlength="10" maxlength="5000" aria-describedby="reviewTextError" placeholder="Share what you thought about this book...">@Model.MyReview?.Text</textarea>
+                        <span id="reviewTextError" class="details-field-error" role="alert" aria-live="polite"></span>
+                        <small class="details-character-count" data-count-for="reviewText">0 / 5000</small>
                         <button type="submit" class="details-reserve-button">@(Model.MyReview is null ? "Submit review" : "Save changes for moderation")</button>
                     </form>
                 </details>
@@ -150,3 +154,43 @@
     }
 </section>
 
+
+
+@section Scripts {
+    <script>
+        (() => {
+            document.querySelectorAll('[data-opinion-form]').forEach(form => {
+                const kind = form.dataset.opinionForm;
+                const field = form.querySelector('textarea');
+                const error = form.querySelector('.details-field-error');
+                const counter = form.querySelector('[data-count-for]');
+                if (!field || !error) return;
+                const min = kind === 'review' ? 10 : 0;
+                const max = kind === 'review' ? 5000 : 30;
+
+                const validate = () => {
+                    const value = field.value.trim();
+                    let message = '';
+                    if (kind === 'review' && value.length < min)
+                        message = `A review must contain at least ${min} characters.`;
+                    else if (value.length > max)
+                        message = `The text cannot exceed ${max} characters.`;
+
+                    error.textContent = message;
+                    field.classList.toggle('is-invalid', Boolean(message));
+                    if (counter) counter.textContent = `${field.value.length} / ${max}`;
+                    return !message;
+                };
+
+                field.addEventListener('input', validate);
+                form.addEventListener('submit', event => {
+                    if (!validate()) {
+                        event.preventDefault();
+                        field.focus();
+                    }
+                });
+                validate();
+            });
+        })();
+    </script>
+}

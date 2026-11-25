@@ -10,18 +10,20 @@ using PrivateLibrary.Services;
 
 namespace PrivateLibrary.Controllers;
 
-[Authorize(Roles = "Librarian,Admin")]
+[Authorize(Roles = "Librarian")]
 public class LibrarianController : Controller
 {
     private readonly ApplicationDbContext _context;
     private readonly UserManager<User> _userManager;
     private readonly NotificationService _notificationService;
+    private readonly BookCatalogService _bookCatalog;
 
-    public LibrarianController(ApplicationDbContext context, UserManager<User> userManager, NotificationService notificationService)
+    public LibrarianController(ApplicationDbContext context, UserManager<User> userManager, NotificationService notificationService, BookCatalogService bookCatalog)
     {
         _context = context;
         _userManager = userManager;
         _notificationService = notificationService;
+        _bookCatalog = bookCatalog;
     }
 
     [HttpGet]
@@ -210,9 +212,9 @@ public class LibrarianController : Controller
         var copy = await _context.BookCopies
             .Include(c => c.Book)
             .FirstOrDefaultAsync(c => c.CopyId == copyId);
-        if (copy is null)
+        if (copy is null || copy.Book.IsArchived)
         {
-            TempData["Error"] = "The selected book copy could not be found.";
+            TempData["Error"] = "The selected book copy could not be found in the active catalog.";
             return RedirectToAction(nameof(IssueReturn), new { tab = "issue", selectedReaderId = readerId });
         }
 
@@ -509,7 +511,7 @@ public class LibrarianController : Controller
     [HttpGet]
     public async Task<IActionResult> CreateBook()
     {
-        await LoadLibrarianBookGenres();
+        ViewBag.BookGenres = await _bookCatalog.GetGenresAsync();
         return View(new AdminBookViewModel());
     }
 
@@ -518,116 +520,58 @@ public class LibrarianController : Controller
     {
         if (model.InitialCopies < 0 || model.InitialCopies > 1000)
             ModelState.AddModelError(nameof(model.InitialCopies), "The number of copies must be between 0 and 1000.");
-
         if (!ModelState.IsValid)
         {
-            await LoadLibrarianBookGenres();
+            ViewBag.BookGenres = await _bookCatalog.GetGenresAsync();
             return View(model);
         }
-
-        if (model.GenreId.HasValue &&
-            !await _context.Genres.AnyAsync(g => g.GenreId == model.GenreId.Value))
+        if (model.GenreId.HasValue && !await _context.Genres.AnyAsync(g => g.GenreId == model.GenreId.Value))
         {
             ModelState.AddModelError(nameof(model.GenreId), "The selected genre does not exist.");
-            await LoadLibrarianBookGenres();
+            ViewBag.BookGenres = await _bookCatalog.GetGenresAsync();
             return View(model);
         }
-
-        await using var transaction = await _context.Database.BeginTransactionAsync();
-        var book = new Book
-        {
-            Title = model.Title.Trim(),
-            Description = CleanLibrarianValue(model.Description),
-            ISBN = CleanLibrarianValue(model.ISBN),
-            PublicationYear = model.PublicationYear,
-            Publisher = CleanLibrarianValue(model.Publisher),
-            Language = CleanLibrarianValue(model.Language),
-            CoverImageUrl = CleanLibrarianValue(model.CoverImageUrl),
-            GenreId = model.GenreId,
-            IsArchived = false
-        };
-
-        _context.Books.Add(book);
-        await _context.SaveChangesAsync();
-        await SyncLibrarianBookAuthorsAsync(book.BookId, model.AuthorNames);
-
-        for (var i = 1; i <= model.InitialCopies; i++)
-        {
-            _context.BookCopies.Add(new BookCopy
-            {
-                BookId = book.BookId,
-                InventoryNumber = $"PL-{book.BookId:D6}-{i:D3}",
-                Status = "Available",
-                Condition = "Good",
-                Location = "Main Library"
-            });
-        }
-
-        await _context.SaveChangesAsync();
-        await transaction.CommitAsync();
-
+        var book = await _bookCatalog.CreateBookAsync(model);
         TempData["Success"] = $"Book '{book.Title}' was added with {model.InitialCopies} copy/copies.";
         return RedirectToAction(nameof(Books));
     }
 
     [HttpGet]
-    public async Task<IActionResult> EditBook(int id)
-    {
-        var book = await _context.Books
-            .Where(b => !b.IsArchived)
-            .Include(b => b.BookAuthors).ThenInclude(ba => ba.Author)
-            .FirstOrDefaultAsync(b => b.BookId == id);
-        if (book is null) return NotFound();
+    
+[HttpGet]
+public async Task<IActionResult> EditBook(int id)
+{
+    var model = await _bookCatalog.GetBookForEditAsync(id);
 
-        await LoadLibrarianBookGenres();
-        return View(new AdminBookViewModel
-        {
-            BookId = book.BookId,
-            Title = book.Title,
-            Description = book.Description,
-            ISBN = book.ISBN,
-            PublicationYear = book.PublicationYear,
-            Publisher = book.Publisher,
-            Language = book.Language,
-            CoverImageUrl = book.CoverImageUrl,
-            GenreId = book.GenreId,
-            AuthorNames = string.Join(Environment.NewLine, book.BookAuthors
-                .Select(ba => ba.Author.FirstName + " " + ba.Author.LastName))
-        });
-    }
+    if (model is null)
+        return NotFound();
+
+    ViewBag.BookGenres = await _bookCatalog.GetGenresAsync();
+
+    return View(model);
+}
+
 
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> EditBook(AdminBookViewModel model)
     {
         if (!ModelState.IsValid)
         {
-            await LoadLibrarianBookGenres();
+            ViewBag.BookGenres = await _bookCatalog.GetGenresAsync();
             return View(model);
         }
-
-        var book = await _context.Books.FirstOrDefaultAsync(b => b.BookId == model.BookId && !b.IsArchived);
-        if (book is null) return NotFound();
-
-        if (model.GenreId.HasValue &&
-            !await _context.Genres.AnyAsync(g => g.GenreId == model.GenreId.Value))
+        if (model.GenreId.HasValue && !await _context.Genres.AnyAsync(g => g.GenreId == model.GenreId.Value))
         {
             ModelState.AddModelError(nameof(model.GenreId), "The selected genre does not exist.");
-            await LoadLibrarianBookGenres();
+            ViewBag.BookGenres = await _bookCatalog.GetGenresAsync();
             return View(model);
         }
-
-        book.Title = model.Title.Trim();
-        book.Description = CleanLibrarianValue(model.Description);
-        book.ISBN = CleanLibrarianValue(model.ISBN);
-        book.PublicationYear = model.PublicationYear;
-        book.Publisher = CleanLibrarianValue(model.Publisher);
-        book.Language = CleanLibrarianValue(model.Language);
-        book.CoverImageUrl = CleanLibrarianValue(model.CoverImageUrl);
-        book.GenreId = model.GenreId;
-
-        await SyncLibrarianBookAuthorsAsync(book.BookId, model.AuthorNames);
-        await _context.SaveChangesAsync();
-
+        var book = await _bookCatalog.UpdateActiveBookAsync(model);
+        if (book is null)
+        {
+            TempData["Error"] = "Archived books cannot be edited. Restore the book first.";
+            return RedirectToAction(nameof(Books));
+        }
         TempData["Success"] = $"Book '{book.Title}' was updated.";
         return RedirectToAction(nameof(Books));
     }
@@ -640,51 +584,14 @@ public class LibrarianController : Controller
             TempData["Error"] = "The number of copies must be between 0 and 1000.";
             return RedirectToAction(nameof(Books));
         }
-
-        var book = await _context.Books.Include(b => b.Copies)
-            .FirstOrDefaultAsync(b => b.BookId == bookId && !b.IsArchived);
-        if (book is null) return NotFound();
-
-        var currentCount = book.Copies.Count;
-
-        if (targetCopyCount < currentCount)
+        var result = await _bookCatalog.IncreaseCopiesAsync(bookId, targetCopyCount);
+        if (result.Book is null) return NotFound();
+        if (result.WouldDecrease)
         {
-            TempData["Error"] =
-                "To reduce the number of copies, open Manage Copies and select the exact copy you want to remove.";
+            TempData["Error"] = "Librarians can add copies but cannot delete catalog records. Contact an administrator to remove a copy.";
             return RedirectToAction(nameof(ManageCopies), new { bookId });
         }
-
-        if (targetCopyCount > currentCount)
-        {
-            var existingNumbers = book.Copies.Select(c => c.InventoryNumber)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var nextNumber = 1;
-
-            while (currentCount < targetCopyCount)
-            {
-                string inventoryNumber;
-                do
-                {
-                    inventoryNumber = $"PL-{book.BookId:D6}-{nextNumber:D3}";
-                    nextNumber++;
-                } while (existingNumbers.Contains(inventoryNumber));
-
-                existingNumbers.Add(inventoryNumber);
-                _context.BookCopies.Add(new BookCopy
-                {
-                    BookId = book.BookId,
-                    InventoryNumber = inventoryNumber,
-                    Status = "Available",
-                    Condition = "Good",
-                    Location = "Main Library"
-                });
-                currentCount++;
-            }
-
-            await _context.SaveChangesAsync();
-        }
-
-        TempData["Success"] = $"The copy count for '{book.Title}' is now {currentCount}.";
+        TempData["Success"] = $"The copy count for '{result.Book.Title}' is now {result.CurrentCount}.";
         return RedirectToAction(nameof(Books));
     }
 
@@ -721,84 +628,5 @@ public class LibrarianController : Controller
         return View(model);
     }
 
-    [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteBookCopy(int bookId, int copyId)
-    {
-        var copy = await _context.BookCopies
-            .Include(c => c.Book)
-            .Include(c => c.Loans)
-            .FirstOrDefaultAsync(c => c.CopyId == copyId && c.BookId == bookId);
-
-        if (copy is null || copy.Book.IsArchived)
-        {
-            TempData["Error"] = "The selected copy could not be found in the active catalog.";
-            return RedirectToAction(nameof(Books));
-        }
-
-        if (copy.Status != "Available" || copy.Loans.Count > 0)
-        {
-            TempData["Error"] =
-                $"Copy {copy.InventoryNumber} cannot be deleted because it is not an unused available copy or it has loan history.";
-            return RedirectToAction(nameof(ManageCopies), new { bookId });
-        }
-
-        var inventoryNumber = copy.InventoryNumber;
-        _context.BookCopies.Remove(copy);
-
-        try
-        {
-            await _context.SaveChangesAsync();
-            TempData["Success"] = $"Copy {inventoryNumber} was deleted.";
-        }
-        catch (DbUpdateException)
-        {
-            TempData["Error"] =
-                $"Copy {inventoryNumber} could not be deleted because another record refers to it. Its history has been preserved.";
-        }
-
-        return RedirectToAction(nameof(ManageCopies), new { bookId });
-    }
-
-
-    private async Task SyncLibrarianBookAuthorsAsync(int bookId, string? authorNames)
-    {
-        var existingLinks = await _context.BookAuthors.Where(ba => ba.BookId == bookId).ToListAsync();
-        _context.BookAuthors.RemoveRange(existingLinks);
-        await _context.SaveChangesAsync();
-
-        var names = (authorNames ?? string.Empty)
-            .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
-            .Select(x => x.Trim())
-            .Where(x => x.Length > 0)
-            .Distinct(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var name in names)
-        {
-            var parts = name.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
-            var firstName = parts[0];
-            var lastName = parts.Length > 1 ? parts[1] : "-";
-
-            var author = await _context.Authors.FirstOrDefaultAsync(a =>
-                a.FirstName.ToLower() == firstName.ToLower() &&
-                a.LastName.ToLower() == lastName.ToLower());
-
-            if (author is null)
-            {
-                author = new Author { FirstName = firstName, LastName = lastName };
-                _context.Authors.Add(author);
-                await _context.SaveChangesAsync();
-            }
-
-            _context.BookAuthors.Add(new BookAuthor { BookId = bookId, AuthorId = author.AuthorId });
-        }
-    }
-
-    private async Task LoadLibrarianBookGenres()
-    {
-        ViewBag.BookGenres = await _context.Genres.AsNoTracking().OrderBy(g => g.Name).ToListAsync();
-    }
-
-    private static string? CleanLibrarianValue(string? value) =>
-        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
 }

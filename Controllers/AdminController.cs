@@ -17,14 +17,16 @@ public class AdminController : Controller
     private readonly UserManager<User> _userManager;
     private readonly RoleManager<IdentityRole<int>> _roleManager;
     private readonly NotificationService _notifications;
+    private readonly BookCatalogService _bookCatalog;
 
     public AdminController(ApplicationDbContext context, UserManager<User> userManager,
-        RoleManager<IdentityRole<int>> roleManager, NotificationService notifications)
+        RoleManager<IdentityRole<int>> roleManager, NotificationService notifications, BookCatalogService bookCatalog)
     {
         _context = context;
         _userManager = userManager;
         _roleManager = roleManager;
         _notifications = notifications;
+        _bookCatalog = bookCatalog;
     }
 
     public async Task<IActionResult> Index()
@@ -451,7 +453,7 @@ public class AdminController : Controller
     [HttpGet]
     public async Task<IActionResult> CreateBook()
     {
-        await LoadBookGenres();
+        ViewBag.BookGenres = await _bookCatalog.GetGenresAsync();
         return View(new AdminBookViewModel());
     }
 
@@ -460,117 +462,61 @@ public class AdminController : Controller
     {
         if (model.InitialCopies < 0 || model.InitialCopies > 1000)
             ModelState.AddModelError(nameof(model.InitialCopies), "The number of copies must be between 0 and 1000.");
-
         if (!ModelState.IsValid)
         {
-            await LoadBookGenres();
+            ViewBag.BookGenres = await _bookCatalog.GetGenresAsync();
             return View(model);
         }
-
-        if (model.GenreId.HasValue &&
-            !await _context.Genres.AnyAsync(g => g.GenreId == model.GenreId.Value))
+        if (model.GenreId.HasValue && !await _context.Genres.AnyAsync(g => g.GenreId == model.GenreId.Value))
         {
             ModelState.AddModelError(nameof(model.GenreId), "The selected genre does not exist.");
-            await LoadBookGenres();
+            ViewBag.BookGenres = await _bookCatalog.GetGenresAsync();
             return View(model);
         }
 
-        await using var transaction = await _context.Database.BeginTransactionAsync();
-        var book = new Book
-        {
-            Title = model.Title.Trim(),
-            Description = Clean(model.Description),
-            ISBN = Clean(model.ISBN),
-            PublicationYear = model.PublicationYear,
-            Publisher = Clean(model.Publisher),
-            Language = Clean(model.Language),
-            CoverImageUrl = Clean(model.CoverImageUrl),
-            GenreId = model.GenreId,
-            IsArchived = false
-        };
-
-        _context.Books.Add(book);
-        await _context.SaveChangesAsync();
-        await SyncBookAuthorsAsync(book.BookId, model.AuthorNames);
-
-        for (var i = 1; i <= model.InitialCopies; i++)
-        {
-            _context.BookCopies.Add(new BookCopy
-            {
-                BookId = book.BookId,
-                InventoryNumber = $"PL-{book.BookId:D6}-{i:D3}",
-                Status = "Available",
-                Condition = "Good",
-                Location = "Main Library"
-            });
-        }
-
-        await _context.SaveChangesAsync();
-        await transaction.CommitAsync();
-
+        var book = await _bookCatalog.CreateBookAsync(model);
         TempData["AdminMessage"] = $"Book '{book.Title}' was added with {model.InitialCopies} copy/copies.";
         return RedirectToAction(nameof(Books));
     }
 
-    [HttpGet]
-    public async Task<IActionResult> EditBook(int id)
-    {
-        var book = await _context.Books
-            .Include(b => b.BookAuthors).ThenInclude(ba => ba.Author)
-            .FirstOrDefaultAsync(b => b.BookId == id);
-        if (book is null) return NotFound();
+    
+[HttpGet]
+public async Task<IActionResult> EditBook(int id)
+{
+    var model = await _bookCatalog.GetBookForEditAsync(id);
 
-        await LoadBookGenres();
-        return View(new AdminBookViewModel
-        {
-            BookId = book.BookId,
-            Title = book.Title,
-            Description = book.Description,
-            ISBN = book.ISBN,
-            PublicationYear = book.PublicationYear,
-            Publisher = book.Publisher,
-            Language = book.Language,
-            CoverImageUrl = book.CoverImageUrl,
-            GenreId = book.GenreId,
-            AuthorNames = string.Join(Environment.NewLine, book.BookAuthors
-                .Select(ba => ba.Author.FirstName + " " + ba.Author.LastName))
-        });
-    }
+    if (model is null)
+        return NotFound();
+
+    ViewBag.BookGenres = await _bookCatalog.GetGenresAsync();
+
+    return View(model);
+}
+
 
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> EditBook(AdminBookViewModel model)
     {
         if (!ModelState.IsValid)
         {
-            await LoadBookGenres();
+            ViewBag.BookGenres = await _bookCatalog.GetGenresAsync();
             return View(model);
         }
-
-        var book = await _context.Books.FirstOrDefaultAsync(b => b.BookId == model.BookId);
-        if (book is null) return NotFound();
-
-        if (model.GenreId.HasValue &&
-            !await _context.Genres.AnyAsync(g => g.GenreId == model.GenreId.Value))
+        if (model.GenreId.HasValue && !await _context.Genres.AnyAsync(g => g.GenreId == model.GenreId.Value))
         {
             ModelState.AddModelError(nameof(model.GenreId), "The selected genre does not exist.");
-            await LoadBookGenres();
+            ViewBag.BookGenres = await _bookCatalog.GetGenresAsync();
             return View(model);
         }
 
-        book.Title = model.Title.Trim();
-        book.Description = Clean(model.Description);
-        book.ISBN = Clean(model.ISBN);
-        book.PublicationYear = model.PublicationYear;
-        book.Publisher = Clean(model.Publisher);
-        book.Language = Clean(model.Language);
-        book.CoverImageUrl = Clean(model.CoverImageUrl);
-        book.GenreId = model.GenreId;
-
-        await SyncBookAuthorsAsync(book.BookId, model.AuthorNames);
-        await _context.SaveChangesAsync();
-
+        var book = await _bookCatalog.UpdateActiveBookAsync(model);
+        if (book is null)
+        {
+            TempData["AdminError"] = "Archived books cannot be edited. Restore the book first.";
+            return RedirectToAction(nameof(Books), new { status = "archived" });
+        }
         TempData["AdminMessage"] = $"Book '{book.Title}' was updated.";
-        return RedirectToAction(nameof(Books), new { status = book.IsArchived ? "archived" : "active" });
+        return RedirectToAction(nameof(Books));
     }
 
     [HttpPost, ValidateAntiForgeryToken]
@@ -581,52 +527,15 @@ public class AdminController : Controller
             TempData["AdminError"] = "The number of copies must be between 0 and 1000.";
             return RedirectToAction(nameof(Books));
         }
-
-        var book = await _context.Books.Include(b => b.Copies)
-            .FirstOrDefaultAsync(b => b.BookId == bookId);
-        if (book is null) return NotFound();
-
-        var currentCount = book.Copies.Count;
-
-        if (targetCopyCount < currentCount)
+        var result = await _bookCatalog.IncreaseCopiesAsync(bookId, targetCopyCount);
+        if (result.Book is null) return NotFound();
+        if (result.WouldDecrease)
         {
-            TempData["AdminError"] =
-                "To reduce the number of copies, open Manage Copies and select the exact copy you want to remove.";
+            TempData["AdminError"] = "To reduce the number of copies, open Manage Copies and select the exact copy you want to remove.";
             return RedirectToAction(nameof(ManageCopies), new { bookId });
         }
-
-        if (targetCopyCount > currentCount)
-        {
-            var existingNumbers = book.Copies.Select(c => c.InventoryNumber)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var nextNumber = 1;
-
-            while (currentCount < targetCopyCount)
-            {
-                string inventoryNumber;
-                do
-                {
-                    inventoryNumber = $"PL-{book.BookId:D6}-{nextNumber:D3}";
-                    nextNumber++;
-                } while (existingNumbers.Contains(inventoryNumber));
-
-                existingNumbers.Add(inventoryNumber);
-                _context.BookCopies.Add(new BookCopy
-                {
-                    BookId = book.BookId,
-                    InventoryNumber = inventoryNumber,
-                    Status = "Available",
-                    Condition = "Good",
-                    Location = "Main Library"
-                });
-                currentCount++;
-            }
-
-            await _context.SaveChangesAsync();
-        }
-
-        TempData["AdminMessage"] = $"The copy count for '{book.Title}' is now {currentCount}.";
-        return RedirectToAction(nameof(Books), new { status = book.IsArchived ? "archived" : "active" });
+        TempData["AdminMessage"] = $"The copy count for '{result.Book.Title}' is now {result.CurrentCount}.";
+        return RedirectToAction(nameof(Books));
     }
 
     [HttpGet]
@@ -655,7 +564,7 @@ public class AdminController : Controller
                     Condition = c.Condition,
                     Location = c.Location,
                     LoanCount = c.Loans.Count,
-                    CanDelete = c.Status == "Available" && c.Loans.Count == 0
+                    CanDelete = !book.IsArchived && c.Status == "Available" && c.Loans.Count == 0
                 }).ToList()
         };
 
@@ -667,11 +576,17 @@ public class AdminController : Controller
     {
         var copy = await _context.BookCopies
             .Include(c => c.Loans)
+            .Include(c => c.Book)
             .FirstOrDefaultAsync(c => c.CopyId == copyId && c.BookId == bookId);
 
         if (copy is null)
         {
             TempData["AdminError"] = "The selected copy could not be found.";
+            return RedirectToAction(nameof(ManageCopies), new { bookId });
+        }
+        if (copy.Book.IsArchived)
+        {
+            TempData["AdminError"] = "Archived books cannot be modified. Restore the book first.";
             return RedirectToAction(nameof(ManageCopies), new { bookId });
         }
 
@@ -700,6 +615,7 @@ public class AdminController : Controller
     }
 
 
+    [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> ArchiveBook(int bookId)
     {
         var book = await _context.Books
@@ -797,50 +713,4 @@ public class AdminController : Controller
 
         TempData["AdminMessage"] = $"Book '{book.Title}' was permanently deleted.";
         return RedirectToAction(nameof(Books));
-    }
-
-    private async Task SyncBookAuthorsAsync(int bookId, string? authorNames)
-    {
-        var existingLinks = await _context.BookAuthors
-            .Where(ba => ba.BookId == bookId).ToListAsync();
-        _context.BookAuthors.RemoveRange(existingLinks);
-        // Save removals before re-adding links so EF Core does not track duplicate composite keys.
-        await _context.SaveChangesAsync();
-
-        var names = (authorNames ?? string.Empty)
-            .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
-            .Select(x => x.Trim())
-            .Where(x => x.Length > 0)
-            .Distinct(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var name in names)
-        {
-            var parts = name.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
-            var firstName = parts[0];
-            var lastName = parts.Length > 1 ? parts[1] : "-";
-
-            var author = await _context.Authors.FirstOrDefaultAsync(a =>
-                a.FirstName.ToLower() == firstName.ToLower() &&
-                a.LastName.ToLower() == lastName.ToLower());
-
-            if (author is null)
-            {
-                author = new Author { FirstName = firstName, LastName = lastName };
-                _context.Authors.Add(author);
-                await _context.SaveChangesAsync();
-            }
-
-            _context.BookAuthors.Add(new BookAuthor { BookId = bookId, AuthorId = author.AuthorId });
-        }
-    }
-
-    private async Task LoadBookGenres()
-    {
-        ViewBag.BookGenres = await _context.Genres.AsNoTracking()
-            .OrderBy(g => g.Name).ToListAsync();
-    }
-
-    private static string? Clean(string? value) =>
-        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-
-}
+    }}

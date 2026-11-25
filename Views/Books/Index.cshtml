@@ -7,6 +7,7 @@
     var selectedGenre = ViewData["GenreId"]?.ToString() ?? string.Empty;
     var yearFrom = ViewData["YearFrom"]?.ToString() ?? string.Empty;
     var yearTo = ViewData["YearTo"]?.ToString() ?? string.Empty;
+    var currentYear = DateTime.Today.Year;
     var sort = ViewData["Sort"]?.ToString() ?? "title_asc";
     var books = Model.ToList();
     var favoriteBookIds = ViewBag.FavoriteBookIds as IEnumerable<int> ?? Enumerable.Empty<int>();
@@ -45,17 +46,20 @@
                         <option value="">All genres</option>
                         @foreach (var genre in genres)
                         {
-                            <option value="@genre.GenreId" selected="@(selectedGenre == genre.GenreId.ToString())">@genre.Name</option>
+                            <option value="@genre.GenreId" selected="@(selectedGenre == genre.GenreId.ToString())">@genre.DisplayName</option>
                         }
                     </select>
                 </div>
                 <div class="catalog-field">
                     <label for="yearFrom">Publication year from</label>
-                    <input id="yearFrom" type="number" name="yearFrom" min="0" max="2100" value="@yearFrom" placeholder="e.g. 2000" />
+                    <input id="yearFrom" type="number" name="yearFrom" min="0" max="@currentYear" value="@yearFrom" placeholder="e.g. 2000" />
                 </div>
                 <div class="catalog-field">
                     <label for="yearTo">Publication year to</label>
-                    <input id="yearTo" type="number" name="yearTo" min="0" max="2100" value="@yearTo" placeholder="e.g. 2025" />
+                    <input id="yearTo" type="number" name="yearTo" min="0" max="@currentYear" value="@yearTo" placeholder="e.g. 2025" />
+                    <span id="yearRangeWarning" class="field-validation" role="alert">
+                        @ViewData["YearRangeError"]
+                    </span>
                 </div>
                 <div class="catalog-field">
                     <label for="sort">Sort by</label>
@@ -74,6 +78,59 @@
             </div>
         </form>
     </section>
+
+<script>
+    (() => {
+        const form = document.querySelector(".catalog-filter-form");
+        const yearFrom = document.getElementById("yearFrom");
+        const yearTo = document.getElementById("yearTo");
+        const warning = document.getElementById("yearRangeWarning");
+        const maxYear = Number(yearFrom?.max);
+
+        if (!form || !yearFrom || !yearTo || !warning) return;
+
+        const validateYearRange = () => {
+            const fromValue = yearFrom.value.trim();
+            const toValue = yearTo.value.trim();
+            let message = "";
+
+            const from = fromValue === "" ? null : Number(fromValue);
+            const to = toValue === "" ? null : Number(toValue);
+
+            if ((from !== null && (!Number.isInteger(from) || from < 0 || from > maxYear)) ||
+                (to !== null && (!Number.isInteger(to) || to < 0 || to > maxYear))) {
+                message = `Enter a whole year between 0 and ${maxYear}.`;
+            } else if (from !== null && to !== null && from > to) {
+                message = "The 'year from' value cannot be greater than the 'year to' value.";
+            }
+
+            warning.textContent = message;
+            const invalidFrom = from !== null &&
+                (!Number.isInteger(from) || from < 0 || from > maxYear);
+            const invalidTo = to !== null &&
+                (!Number.isInteger(to) || to < 0 || to > maxYear);
+            const reversedRange = from !== null && to !== null && from > to;
+
+            yearFrom.setCustomValidity(invalidFrom || reversedRange ? message : "");
+            yearTo.setCustomValidity(invalidTo || reversedRange ? message : "");
+            return message === "";
+        };
+
+        yearFrom.addEventListener("input", validateYearRange);
+        yearTo.addEventListener("input", validateYearRange);
+        form.addEventListener("submit", event => {
+            if (!validateYearRange()) {
+                event.preventDefault();
+                (yearFrom.value && yearTo.value && Number(yearFrom.value) > Number(yearTo.value)
+                    ? yearTo
+                    : (!yearFrom.value || Number(yearFrom.value) < 0 || Number(yearFrom.value) > maxYear
+                        ? yearFrom : yearTo)).reportValidity();
+            }
+        });
+
+        validateYearRange();
+    })();
+</script>
 
     @if (!books.Any())
     {
@@ -94,7 +151,7 @@
             @foreach (var book in books)
             {
                 var authors = string.Join(", ", book.BookAuthors
-                    .Select(x => $"{x.Author?.FirstName} {x.Author?.LastName}".Trim())
+                    .Select(x => x.Author?.DisplayFullName ?? string.Empty)
                     .Where(x => !string.IsNullOrWhiteSpace(x)));
                 var availableCopies = book.Copies.Count(c => c.Status == "Available");
                 <article class="catalog-book-card">
@@ -114,17 +171,17 @@
                             </button>
                         </form>
                     }
-                    <a asp-action="Details" asp-route-id="@book.BookId" class="catalog-cover-link" aria-label="View book @book.Title">
+                    <a asp-action="Details" asp-route-id="@book.BookId" class="catalog-cover-link" aria-label="View book @book.DisplayTitle">
                         <div class="catalog-book-cover">
                             @if (!string.IsNullOrWhiteSpace(book.CoverImageUrl))
                             {
-                                <img src="@book.CoverImageUrl" alt="Cover of @book.Title" loading="lazy" />
+                                <img src="@book.CoverImageUrl" alt="Cover of @book.DisplayTitle" loading="lazy" />
                             }
                             else
                             {
                                 <div class="catalog-cover-placeholder">
                                     <span class="cover-ornament">✦</span>
-                                    <span class="cover-placeholder-title">@book.Title</span>
+                                    <span class="cover-placeholder-title">@book.DisplayTitle</span>
                                     <span class="cover-placeholder-author">@(authors.Length > 0 ? authors : "Private Library")</span>
                                 </div>
                             }
@@ -133,9 +190,9 @@
                     <div class="catalog-book-info">
                         @if (book.Genre is not null)
                         {
-                            <span class="genre-pill">@book.Genre.Name</span>
+                            <span class="genre-pill">@book.Genre.DisplayName</span>
                         }
-                        <h3><a asp-action="Details" asp-route-id="@book.BookId">@book.Title</a></h3>
+                        <h3><a asp-action="Details" asp-route-id="@book.BookId">@book.DisplayTitle</a></h3>
                         <p class="catalog-book-author">@(authors.Length > 0 ? authors : "Author not specified")</p>
                         <div class="catalog-book-meta">
                             @if (book.PublicationYear.HasValue)

@@ -1,25 +1,8 @@
 @model PrivateLibrary.ViewModels.BookCopyManagementViewModel
 @{
     ViewData["Title"] = "Manage Copies";
+    ViewData["CanDeleteCopies"] = false;
 }
-<style>
-.copy-management{max-width:1050px;margin:0 auto}
-.copy-management-header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:22px}
-.copy-management-header h1{margin:4px 0;color:#604832}
-.copy-management-header p{margin:0;color:#806c58}
-.copy-management-back{display:inline-flex;align-items:center;padding:10px 15px;border-radius:9px;background:#805633;color:#fffaf3;text-decoration:none}
-.copy-management-list{display:grid;gap:12px}
-.copy-management-item{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:16px 18px;border:1px solid #eadfce;border-radius:13px;background:#fffaf3}
-.copy-management-details{display:grid;gap:5px;color:#806c58;font-size:13px}
-.copy-management-details strong{font-size:15px;color:#604832}
-.copy-management-status{display:inline-block;padding:4px 9px;border-radius:20px;background:#e8efdf;color:#536a42;font-size:11px;width:max-content}
-.copy-management-status.protected{background:#f4e3dd;color:#8a4d3b}
-.copy-management-delete{border:0;border-radius:9px;padding:10px 15px;background:#805633;color:#fffaf3;font-weight:600;cursor:pointer}
-.copy-management-delete:hover{background:#624127}
-.copy-management-delete:disabled{background:#c9bba9;cursor:not-allowed}
-.copy-management-note{font-size:12px;color:#8a6c50;max-width:420px}
-.copy-management-empty{padding:30px;text-align:center;color:#806c58;background:#fbf6ed;border-radius:12px}
-</style>
 <div class="librarian-shell">
     <partial name="_LibrarianSidebar" />
     <section class="librarian-content">
@@ -30,39 +13,9 @@
                     <h1>Manage Copies</h1>
                     <p>@Model.BookTitle · @Model.Copies.Count physical copy/copies</p>
                 </div>
-                <a asp-action="Books"  class="copy-management-back">Back to catalog</a>
+                <a asp-action="Books" class="copy-management-back">Back to catalog</a>
             </div>
-@if (Model.Copies.Count == 0)
-            {
-                <div class="copy-management-empty">This book has no physical copies.</div>
-            }
-            else
-            {
-                <div class="copy-management-list">
-                    @foreach (var copy in Model.Copies)
-                    {
-                        <article class="copy-management-item">
-                            <div class="copy-management-details">
-                                <strong>@copy.InventoryNumber</strong>
-                                <span class="copy-management-status @(copy.CanDelete ? "" : "protected")">@copy.Status</span>
-                                <span>Condition: @(copy.Condition ?? "Not specified")</span>
-                                <span>Location: @(copy.Location ?? "Not specified")</span>
-                                <span>Loan records: @copy.LoanCount</span>
-                                @if (!copy.CanDelete)
-                                {
-                                    <span class="copy-management-note">Protected: this copy is not an unused available copy or it has loan history.</span>
-                                }
-                            </div>
-                            <form asp-action="DeleteBookCopy" method="post" onsubmit="return confirm('Delete copy @copy.InventoryNumber? This action cannot be undone.');">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="bookId" value="@Model.BookId" />
-                                <input type="hidden" name="copyId" value="@copy.CopyId" />
-                                <button type="submit" class="copy-management-delete" disabled="@(!copy.CanDelete)">Delete this copy</button>
-                            </form>
-                        </article>
-                    }
-                </div>
-            }
+            <partial name="_BookCopiesList" model="Model" />
         </div>
     </section>
 </div>

@@ -68,7 +68,7 @@
                 <option value="">All genres</option>
                 @foreach (var genre in Model.Genres)
                 {
-                    <option value="@genre.GenreId" selected="@(Model.GenreId == genre.GenreId)">@genre.Name</option>
+                    <option value="@genre.GenreId" selected="@(Model.GenreId == genre.GenreId)">@genre.DisplayName</option>
                 }
             </select>
             <select name="sort">
@@ -111,19 +111,25 @@
                                 <div><strong>Copies:</strong> @book.AvailableCopies available / @book.TotalCopies total</div>
                             </div>
 
-                            <form asp-action="UpdateBookCopies" method="post" class="catalog-copy-form">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="bookId" value="@book.BookId" />
-                                <div>
-                                    <label for="copies-@book.BookId">Total copies</label>
-                                    <input id="copies-@book.BookId" type="number" name="targetCopyCount" min="0" max="1000" value="@book.TotalCopies" />
-                                </div>
-                                <button type="submit" class="catalog-apply-button">Update</button>
-                            </form>
+                            @if (!book.IsArchived)
+                            {
+                                <form asp-action="UpdateBookCopies" method="post" class="catalog-copy-form">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="bookId" value="@book.BookId" />
+                                    <div>
+                                        <label for="copies-@book.BookId">Total copies</label>
+                                        <input id="copies-@book.BookId" type="number" name="targetCopyCount" min="0" max="1000" value="@book.TotalCopies" />
+                                    </div>
+                                    <button type="submit" class="catalog-apply-button">Update</button>
+                                </form>
+                            }
 
                             <div class="catalog-card-actions">
-                                <a asp-action="ManageCopies" asp-route-bookId="@book.BookId" class="catalog-edit">Manage copies</a>
-                                <a asp-action="EditBook" asp-route-id="@book.BookId" class="catalog-edit">Edit details</a>
+                                @if (!book.IsArchived)
+                                {
+                                    <a asp-action="ManageCopies" asp-route-bookId="@book.BookId" class="catalog-edit">Manage copies</a>
+                                    <a asp-action="EditBook" asp-route-id="@book.BookId" class="catalog-edit">Edit details</a>
+                                }
                                 @if (book.IsArchived)
                                 {
                                     <form asp-action="RestoreBook" method="post">
@@ -140,10 +146,14 @@
                                         <button type="submit" class="catalog-archive">Archive</button>
                                     </form>
                                 }
-                                <form asp-action="DeleteBook" method="post" onsubmit="return confirm('Delete this book permanently if it has no history? Otherwise it will be archived.');">
+                                <form asp-action="DeleteBook" method="post">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="bookId" value="@book.BookId" />
-                                    <button type="submit" class="catalog-delete">Delete</button>
+                                    <button type="submit" class="catalog-delete"
+                                            data-site-confirm="Delete this book permanently if it has no history? Otherwise it will be archived."
+                                            data-site-confirm-title="Delete book?"
+                                            data-site-confirm-cancel="Keep book"
+                                            data-site-confirm-accept="Delete book">Delete</button>
                                 </form>
                             </div>
                         </article>

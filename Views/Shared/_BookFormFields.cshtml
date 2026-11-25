@@ -1,0 +1,286 @@
+
+@model PrivateLibrary.ViewModels.AdminBookViewModel
+
+<div class="book-language-section" data-book-language-section
+     data-active-language="@Model.ActiveLanguage">
+
+    <div class="book-language-heading">
+        <span class="book-language-heading-title">Book information</span>
+
+        <div class="book-language-switch">
+            <span class="book-language-label">EN</span>
+
+            <label class="book-language-toggle">
+                <input type="checkbox"
+                       data-language-toggle
+                       aria-label="Switch book information language"
+                       checked="@(Model.ActiveLanguage == "uk")" />
+                <span class="book-language-slider"></span>
+            </label>
+
+            <span class="book-language-label">UA</span>
+        </div>
+    </div>
+
+    <input type="hidden"
+           asp-for="ActiveLanguage"
+           data-active-language-input />
+
+    <div class="book-language-panel"
+         data-language-panel="en"
+         hidden="@(Model.ActiveLanguage != "en")">
+
+        <div class="catalog-field">
+            <label asp-for="Title"></label>
+            <input asp-for="Title" />
+            <span asp-validation-for="Title" class="text-danger"></span>
+        </div>
+
+        <div class="catalog-field">
+            <label asp-for="AuthorNames"></label>
+            <textarea asp-for="AuthorNames"
+                      rows="3"
+                      placeholder="Jane Austen&#10;George Orwell"></textarea>
+            <span asp-validation-for="AuthorNames" class="text-danger"></span>
+            <small>Enter one author per line.</small>
+        </div>
+
+        <div class="catalog-field" style="grid-column:1/-1">
+            <label asp-for="Description"></label>
+            <textarea asp-for="Description" rows="5"></textarea>
+            <span asp-validation-for="Description" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="book-language-panel"
+         data-language-panel="uk"
+         hidden="@(Model.ActiveLanguage != "uk")">
+
+        <div class="catalog-field">
+            <label asp-for="TitleUk"></label>
+            <input asp-for="TitleUk" />
+            <span asp-validation-for="TitleUk" class="text-danger"></span>
+        </div>
+
+        <div class="catalog-field">
+            <label asp-for="AuthorNamesUk"></label>
+            <textarea asp-for="AuthorNamesUk"
+                      rows="3"
+                      placeholder="Джейн Остін&#10;Джордж Орвелл"></textarea>
+            <span asp-validation-for="AuthorNamesUk" class="text-danger"></span>
+            <small>Вводьте кожного автора з нового рядка в тому самому порядку, що й англійською.</small>
+        </div>
+
+        <div class="catalog-field" style="grid-column:1/-1">
+            <label asp-for="DescriptionUk"></label>
+            <textarea asp-for="DescriptionUk" rows="5"></textarea>
+            <span asp-validation-for="DescriptionUk" class="text-danger"></span>
+        </div>
+    </div>
+</div>
+
+<style>
+    .book-language-section {
+        grid-column: 1 / -1;
+        display: grid;
+        gap: 14px;
+        min-width: 0;
+    }
+
+    .book-language-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--line);
+    }
+
+    .book-language-heading-title {
+        color: var(--brown-dark);
+        font-weight: 700;
+        font-size: .95rem;
+    }
+
+    .book-language-switch {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+    }
+
+    .book-language-label {
+        color: var(--muted);
+        font-size: .76rem;
+        font-weight: 700;
+        transition: color .2s;
+    }
+
+    .book-language-label.active {
+        color: var(--brown-dark);
+    }
+
+    .book-language-toggle {
+        position: relative;
+        display: inline-block;
+        width: 48px;
+        height: 26px;
+        flex: 0 0 48px;
+        cursor: pointer;
+    }
+
+    .book-language-toggle input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+    }
+
+    .book-language-slider {
+        position: absolute;
+        inset: 0;
+        border-radius: 20px;
+        background: var(--brown);
+        transition: background .2s;
+    }
+
+    .book-language-slider::before {
+        content: "";
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        left: 3px;
+        top: 3px;
+        border-radius: 50%;
+        background: #fffdf8;
+        box-shadow: 0 1px 3px rgba(0,0,0,.2);
+        transition: transform .2s ease;
+    }
+
+    .book-language-toggle input:checked + .book-language-slider::before {
+        transform: translateX(22px);
+    }
+
+    .book-language-toggle input:focus-visible + .book-language-slider {
+        outline: 3px solid rgba(128,85,47,.2);
+        outline-offset: 3px;
+    }
+
+    .book-language-panel {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        min-width: 0;
+    }
+
+    .book-language-panel[hidden] {
+        display: none !important;
+    }
+
+    .book-language-panel textarea {
+        width: 100%;
+        min-height: 42px;
+        padding: 10px 11px;
+        border: 1px solid #e2d2bb;
+        border-radius: 8px;
+        outline: 0;
+        color: var(--text);
+        background: rgba(255,253,248,.9);
+        font: inherit;
+        font-size: .78rem;
+        resize: vertical;
+    }
+
+    .book-language-panel textarea:focus {
+        border-color: #a98760;
+        box-shadow: 0 0 0 3px rgba(128,85,47,.07);
+    }
+
+    .book-language-panel small {
+        display: block;
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: .7rem;
+    }
+
+    @@media (max-width: 650px) {
+        .book-language-panel {
+            grid-template-columns: 1fr;
+        }
+
+        .book-language-panel .catalog-field {
+            grid-column: 1 / -1;
+        }
+    }
+</style>
+
+<script>
+    (() => {
+        document.querySelectorAll("[data-book-language-section]").forEach(section => {
+            if (section.dataset.initialized === "true") return;
+            section.dataset.initialized = "true";
+
+            const toggle = section.querySelector("[data-language-toggle]");
+            const activeInput = section.querySelector("[data-active-language-input]");
+            const panels = section.querySelectorAll("[data-language-panel]");
+            const labels = section.querySelectorAll(".book-language-label");
+
+            function updateLanguage() {
+                const language = toggle.checked ? "uk" : "en";
+
+                activeInput.value = language;
+
+                panels.forEach(panel => {
+                    panel.hidden = panel.dataset.languagePanel !== language;
+                });
+
+                labels[0].classList.toggle("active", language === "en");
+                labels[1].classList.toggle("active", language === "uk");
+            }
+
+            toggle.addEventListener("change", updateLanguage);
+            updateLanguage();
+        });
+    })();
+</script>
+
+<div class="catalog-field">
+    <label asp-for="GenreId">Genre</label>
+    <select asp-for="GenreId">
+        <option value="">No genre</option>
+        @foreach (var genre in (IEnumerable<PrivateLibrary.Models.Genre>)ViewBag.BookGenres)
+        {
+            <option value="@genre.GenreId">@genre.Name</option>
+        }
+    </select>
+    <span asp-validation-for="GenreId" class="text-danger"></span>
+</div>
+
+<div class="catalog-field">
+    <label asp-for="ISBN"></label>
+    <input asp-for="ISBN" />
+    <span asp-validation-for="ISBN" class="text-danger"></span>
+</div>
+
+<div class="catalog-field">
+    <label asp-for="PublicationYear"></label>
+    <input asp-for="PublicationYear" type="number" min="0" max="2100" />
+    <span asp-validation-for="PublicationYear" class="text-danger"></span>
+</div>
+
+<div class="catalog-field">
+    <label asp-for="Publisher"></label>
+    <input asp-for="Publisher" />
+    <span asp-validation-for="Publisher" class="text-danger"></span>
+</div>
+
+<div class="catalog-field">
+    <label asp-for="Language"></label>
+    <input asp-for="Language" />
+    <span asp-validation-for="Language" class="text-danger"></span>
+</div>
+
+<div class="catalog-field">
+    <label asp-for="CoverImageUrl">Cover image URL</label>
+    <input asp-for="CoverImageUrl" />
+    <span asp-validation-for="CoverImageUrl" class="text-danger"></span>
+</div>

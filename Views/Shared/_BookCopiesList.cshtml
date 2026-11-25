@@ -1,0 +1,44 @@
+@model PrivateLibrary.ViewModels.BookCopyManagementViewModel
+@if (Model.Copies.Count == 0)
+{
+    <div class="copy-management-empty">This book has no physical copies.</div>
+}
+else
+{
+    <div class="copy-management-list">
+        @foreach (var copy in Model.Copies)
+        {
+            <article class="copy-management-item">
+                <div class="copy-management-details">
+                    <strong>@copy.InventoryNumber</strong>
+                    <span class="copy-management-status @(copy.CanDelete ? "" : "protected")">@copy.Status</span>
+                    <span>Condition: @(copy.Condition ?? "Not specified")</span>
+                    <span>Location: @(copy.Location ?? "Not specified")</span>
+                    <span>Loan records: @copy.LoanCount</span>
+                    @if (Model.IsArchived)
+                    {
+                        <span class="copy-management-note">Archived book: restore it before modifying its copies.</span>
+                    }
+                    else if (!copy.CanDelete)
+                    {
+                        <span class="copy-management-note">Protected: this copy is not an unused available copy or it has loan history.</span>
+                    }
+                </div>
+                @if (ViewData["CanDeleteCopies"] is true && !Model.IsArchived)
+                {
+                    <form asp-action="DeleteBookCopy" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="bookId" value="@Model.BookId" />
+                        <input type="hidden" name="copyId" value="@copy.CopyId" />
+                        <button type="submit" class="copy-management-delete"
+                                data-site-confirm="Delete copy @copy.InventoryNumber? This action cannot be undone."
+                                data-site-confirm-title="Delete book copy?"
+                                data-site-confirm-cancel="Keep copy"
+                                data-site-confirm-accept="Delete copy"
+                                disabled="@(!copy.CanDelete)">Delete this copy</button>
+                    </form>
+                }
+            </article>
+        }
+    </div>
+}

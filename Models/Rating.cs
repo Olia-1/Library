@@ -17,7 +17,7 @@ public class Rating
     [Range(1, 5)]
     public byte Value { get; set; }
 
-    [StringLength(500)]
+    [StringLength(30)]
     public string? Text { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

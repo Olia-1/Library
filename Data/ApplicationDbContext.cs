@@ -32,6 +32,9 @@ public class ApplicationDbContext
     public DbSet<MembershipPlan> MembershipPlans => Set<MembershipPlan>();
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
     public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<BookTranslation> BookTranslations => Set<BookTranslation>();
+    public DbSet<GenreTranslation> GenreTranslations => Set<GenreTranslation>();
+    public DbSet<AuthorTranslation> AuthorTranslations => Set<AuthorTranslation>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -210,5 +213,44 @@ public class ApplicationDbContext
         builder.Entity<Payment>()
             .Property(x => x.Amount)
             .HasPrecision(10, 2);
+
+        builder.Entity<BookTranslation>(entity =>
+        {
+            entity.HasKey(x => x.BookTranslationId);
+
+            entity.HasIndex(x => new { x.BookId, x.LanguageCode })
+        .IsUnique();
+
+            entity.HasOne(x => x.Book)
+        .WithMany(x => x.Translations)
+        .HasForeignKey(x => x.BookId)
+        .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<GenreTranslation>(entity =>
+        {
+            entity.HasKey(x => x.GenreTranslationId);
+
+            entity.HasIndex(x => new { x.GenreId, x.LanguageCode })
+        .IsUnique();
+
+            entity.HasOne(x => x.Genre)
+        .WithMany(x => x.Translations)
+        .HasForeignKey(x => x.GenreId)
+        .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<AuthorTranslation>(entity =>
+        {
+            entity.HasKey(x => x.AuthorTranslationId);
+
+            entity.HasIndex(x => new { x.AuthorId, x.LanguageCode })
+        .IsUnique();
+
+            entity.HasOne(x => x.Author)
+        .WithMany(x => x.Translations)
+        .HasForeignKey(x => x.AuthorId)
+        .OnDelete(DeleteBehavior.Cascade);
+        });
     }
 }

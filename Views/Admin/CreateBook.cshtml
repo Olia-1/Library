@@ -18,58 +18,11 @@
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <section class="admin-panel">
                 <div class="catalog-filter-grid">
-                    <div class="catalog-field">
-                        <label asp-for="Title"></label>
-                        <input asp-for="Title" />
-                        <span asp-validation-for="Title" class="text-danger"></span>
-                    </div>
-                    <div class="catalog-field">
-                        <label asp-for="AuthorNames"></label>
-                        <textarea asp-for="AuthorNames" rows="3" placeholder="Jane Austen&#10;George Orwell"></textarea>
-                        <span asp-validation-for="AuthorNames" class="text-danger"></span>
-                        <small>Enter one author per line. Existing authors will be reused.</small>
-                    </div>
-                    <div class="catalog-field">
-                        <label asp-for="GenreId">Genre</label>
-                        <select asp-for="GenreId">
-                            <option value="">No genre</option>
-                            @foreach (var genre in (IEnumerable<PrivateLibrary.Models.Genre>)ViewBag.BookGenres)
-                            {
-                                <option value="@genre.GenreId">@genre.Name</option>
-                            }
-                        </select>
-                    </div>
-                    <div class="catalog-field">
-                        <label asp-for="ISBN"></label>
-                        <input asp-for="ISBN" />
-                        <span asp-validation-for="ISBN" class="text-danger"></span>
-                    </div>
-                    <div class="catalog-field">
-                        <label asp-for="PublicationYear"></label>
-                        <input asp-for="PublicationYear" type="number" min="0" max="2100" />
-                        <span asp-validation-for="PublicationYear" class="text-danger"></span>
-                    </div>
-                    <div class="catalog-field">
-                        <label asp-for="Publisher"></label>
-                        <input asp-for="Publisher" />
-                    </div>
-                    <div class="catalog-field">
-                        <label asp-for="Language"></label>
-                        <input asp-for="Language" />
-                    </div>
-                    <div class="catalog-field">
-                        <label asp-for="CoverImageUrl">Cover image URL</label>
-                        <input asp-for="CoverImageUrl" />
-                        <span asp-validation-for="CoverImageUrl" class="text-danger"></span>
-                    </div>
+                    <partial name="_BookFormFields" model="Model" />
                     <div class="catalog-field">
                         <label asp-for="InitialCopies"></label>
                         <input asp-for="InitialCopies" type="number" min="0" max="1000" />
                         <span asp-validation-for="InitialCopies" class="text-danger"></span>
-                    </div>
-                    <div class="catalog-field" style="grid-column:1/-1">
-                        <label asp-for="Description"></label>
-                        <textarea asp-for="Description" rows="5"></textarea>
                     </div>
                 </div>
                 <div class="catalog-filter-actions">

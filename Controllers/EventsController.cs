@@ -75,9 +75,7 @@ public class EventsController : Controller
         });
     }
 
-    // Returns start times in 30-minute increments. For library events, only
-    // slots that do not overlap an approved, visible or hidden scheduled event are returned.
-    [AllowAnonymous]
+
     [HttpGet]
     public async Task<IActionResult> AvailableTimes(DateTime date, int durationMinutes, string location = "In Library")
     {
