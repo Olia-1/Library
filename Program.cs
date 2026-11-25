@@ -1,3 +1,4 @@
+
 using System.Diagnostics;
 using System.Globalization;
 using System.Net;
@@ -18,12 +19,25 @@ builder.Services.AddScoped<BookCatalogService>();
 builder.Services.AddScoped<NotificationMaintenanceService>();
 builder.Services.AddHostedService<NotificationReminderWorker>();
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException(
-        "Connection string 'DefaultConnection' was not found. Configure it with User Secrets.");
+if (builder.Environment.IsEnvironment("Testing"))
+{
+    var databaseName = builder.Configuration["Testing:DatabaseName"]
+        ?? $"PrivateLibraryTests_{Guid.NewGuid():N}";
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseInMemoryDatabase(databaseName));
+}
+else
+{
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+        ?? throw new InvalidOperationException(
+            "Connection string 'DefaultConnection' was not found. Configure it with User Secrets.");
+
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseMySql(
+            connectionString,
+            ServerVersion.AutoDetect(connectionString)));
+}
 
 builder.Services
     .AddIdentity<User, IdentityRole<int>>(options =>
@@ -49,10 +63,16 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 var app = builder.Build();
 
-// Seed the roles required by the application. The Identity tables must already exist.
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<int>>>();
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+    if (app.Environment.IsEnvironment("Testing"))
+    {
+        await context.Database.EnsureCreatedAsync();
+    }
+
     string[] roles = ["Reader", "Librarian", "Admin"];
 
     foreach (var roleName in roles)
@@ -60,6 +80,7 @@ using (var scope = app.Services.CreateScope())
         if (!await roleManager.RoleExistsAsync(roleName))
         {
             var result = await roleManager.CreateAsync(new IdentityRole<int>(roleName));
+
             if (!result.Succeeded)
             {
                 throw new InvalidOperationException(
@@ -79,6 +100,7 @@ if (!app.Environment.IsDevelopment())
 
 var englishCulture = CultureInfo.GetCultureInfo("en-GB");
 var ukrainianCulture = CultureInfo.GetCultureInfo("uk-UA");
+
 var localizationOptions = new RequestLocalizationOptions
 {
     DefaultRequestCulture = new RequestCulture(englishCulture),
@@ -90,6 +112,7 @@ var localizationOptions = new RequestLocalizationOptions
         new AcceptLanguageHeaderRequestCultureProvider()
     }
 };
+
 app.UseRequestLocalization(localizationOptions);
 
 app.UseRouting();
@@ -149,8 +172,6 @@ app.Lifetime.ApplicationStarted.Register(() =>
     Console.WriteLine("==================================================");
     Console.WriteLine();
 
-    // 0.0.0.0 is a listening address, not a browser destination.
-    // Open the local site through localhost after Kestrel has started.
     if (app.Environment.IsDevelopment())
     {
         try
@@ -160,6 +181,7 @@ app.Lifetime.ApplicationStarted.Register(() =>
                 FileName = localUrl,
                 UseShellExecute = true
             });
+
             Console.WriteLine($"Browser opened: {localUrl}");
         }
         catch (Exception ex)
@@ -171,3 +193,5 @@ app.Lifetime.ApplicationStarted.Register(() =>
 });
 
 app.Run();
+
+public partial class Program { }
