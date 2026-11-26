@@ -29,6 +29,46 @@ public class MembershipController : Controller
         _logger = logger;
     }
 
+    private static bool IsTrialPlan(MembershipPlan plan) =>
+        plan.Price == 0 ||
+        plan.Name.Contains("trial", StringComparison.OrdinalIgnoreCase) ||
+        plan.Name.Contains("пробн", StringComparison.OrdinalIgnoreCase);
+
+    private async Task<MembershipPlan> GetOrCreateTrialPlanAsync()
+    {
+        var trialPlan = await _context.MembershipPlans
+            .FirstOrDefaultAsync(p => p.IsActive &&
+                (p.Price == 0 ||
+                 EF.Functions.Like(p.Name, "%trial%") ||
+                 EF.Functions.Like(p.Name, "%пробн%")));
+
+        if (trialPlan != null)
+            return trialPlan;
+
+        trialPlan = new MembershipPlan
+        {
+            Name = "Free Trial",
+            Description = "One-month introductory membership. Available once per reader.",
+            Price = 0,
+            DurationDays = 30,
+            IsActive = true
+        };
+
+        _context.MembershipPlans.Add(trialPlan);
+        await _context.SaveChangesAsync();
+        return trialPlan;
+    }
+
+    private async Task<bool> HasUsedTrialAsync(int userId)
+    {
+        return await _context.Subscriptions
+            .Include(s => s.MembershipPlan)
+            .AnyAsync(s => s.UserId == userId &&
+                (s.MembershipPlan.Price == 0 ||
+                 EF.Functions.Like(s.MembershipPlan.Name, "%trial%") ||
+                 EF.Functions.Like(s.MembershipPlan.Name, "%пробн%")));
+    }
+
     [HttpGet]
     public async Task<IActionResult> Plans()
     {
@@ -47,8 +87,6 @@ public class MembershipController : Controller
             .OrderByDescending(s => s.EndDate)
             .FirstOrDefaultAsync();
 
-        // Only completed payments count as purchased memberships.
-        // Load all completed purchases so the total is not limited to the latest 10 rows.
         var purchasedPayments = await _context.Payments
             .AsNoTracking()
             .Where(p => p.Subscription.UserId == user.Id && p.Status == "Completed")
@@ -57,8 +95,6 @@ public class MembershipController : Controller
             .OrderByDescending(p => p.PaymentDate)
             .ToListAsync();
 
-        // Protect the summary from accidentally counting a subscription twice
-        // if duplicate completed payment rows ever exist for the same subscription.
         var uniquePurchasedPayments = purchasedPayments
             .GroupBy(p => p.SubscriptionId)
             .Select(g => g.First())
@@ -73,11 +109,18 @@ public class MembershipController : Controller
             .Take(10)
             .ToListAsync();
 
+        var trialPlan = await GetOrCreateTrialPlanAsync();
+        var trialAlreadyUsed = await HasUsedTrialAsync(user.Id);
+
         var model = new MembershipPlansViewModel
         {
+            TrialPlanId = trialPlan.PlanId,
+            CanStartTrial = !trialAlreadyUsed && activeSubscription is null,
             Plans = await _context.MembershipPlans
                 .AsNoTracking()
-                .Where(p => p.IsActive)
+                .Where(p => p.IsActive && p.Price > 0 &&
+                    !EF.Functions.Like(p.Name, "%trial%") &&
+                    !EF.Functions.Like(p.Name, "%пробн%"))
                 .OrderBy(p => p.DurationDays)
                 .ToListAsync(),
 
@@ -91,6 +134,143 @@ public class MembershipController : Controller
         };
 
         return View(model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult AcceptTrialTerms(bool accepted)
+    {
+        if (!accepted)
+        {
+            TempData["Error"] = "Please accept the free-trial terms before continuing.";
+            return RedirectToAction(nameof(Plans));
+        }
+
+        TempData["TrialTermsAccepted"] = "true";
+        return RedirectToAction(nameof(TrialCheckout));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> TrialCheckout()
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user is null) return Challenge();
+
+        if (!TempData.ContainsKey("TrialTermsAccepted"))
+        {
+            TempData["Error"] = "Please review and accept the free-trial terms first.";
+            return RedirectToAction(nameof(Plans));
+        }
+        TempData.Remove("TrialTermsAccepted");
+
+        if (await HasUsedTrialAsync(user.Id))
+        {
+            TempData["Error"] = "The free trial can only be activated once per account.";
+            return RedirectToAction(nameof(Plans));
+        }
+
+        var activeSubscription = await _context.Subscriptions.AnyAsync(s =>
+            s.UserId == user.Id && s.Status == "Active" &&
+            s.StartDate <= DateTime.UtcNow && s.EndDate > DateTime.UtcNow);
+        if (activeSubscription)
+        {
+            TempData["Error"] = "You already have an active membership.";
+            return RedirectToAction(nameof(Plans));
+        }
+
+        var plan = await GetOrCreateTrialPlanAsync();
+        return View(new TestCardCheckoutViewModel
+        {
+            PlanId = plan.PlanId,
+            PlanName = "Free one-month trial",
+            Price = 0,
+            DurationDays = 30
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> VerifyTrialCard(TestCardCheckoutViewModel model)
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user is null) return Challenge();
+
+        var trialPlan = await GetOrCreateTrialPlanAsync();
+        if (model.PlanId != trialPlan.PlanId || await HasUsedTrialAsync(user.Id))
+        {
+            TempData["Error"] = "The free trial is unavailable or has already been used.";
+            return RedirectToAction(nameof(Plans));
+        }
+
+        var hasActiveSubscription = await _context.Subscriptions.AnyAsync(s =>
+            s.UserId == user.Id && s.Status == "Active" &&
+            s.StartDate <= DateTime.UtcNow && s.EndDate > DateTime.UtcNow);
+        if (hasActiveSubscription)
+        {
+            TempData["Error"] = "You already have an active membership.";
+            return RedirectToAction(nameof(Plans));
+        }
+
+        var rawCardNumber = model.CardNumber ?? string.Empty;
+        var digits = new string(rawCardNumber.Where(char.IsDigit).ToArray());
+        var cardCharactersValid = rawCardNumber.All(c => char.IsDigit(c) || char.IsWhiteSpace(c));
+        var cardValid = cardCharactersValid && digits.Length >= 13 && digits.Length <= 19 && PassesLuhnCheck(digits);
+        var expiryValid = int.TryParse(model.ExpiryMonth, out var month) &&
+            int.TryParse(model.ExpiryYear, out var year) &&
+            month >= 1 && month <= 12 &&
+            (year > DateTime.UtcNow.Year || (year == DateTime.UtcNow.Year && month >= DateTime.UtcNow.Month));
+
+        if (!cardValid)
+            ModelState.AddModelError(nameof(model.CardNumber), "Enter 13–19 test digits with a valid checksum.");
+        if (!expiryValid)
+            ModelState.AddModelError(nameof(model.ExpiryMonth), "Enter a valid future expiry month and year.");
+        if (string.IsNullOrWhiteSpace(model.CardholderName))
+            ModelState.AddModelError(nameof(model.CardholderName), "Enter the test cardholder name.");
+        if (string.IsNullOrWhiteSpace(model.Cvc) || model.Cvc.Length != 3 || !model.Cvc.All(char.IsDigit))
+            ModelState.AddModelError(nameof(model.Cvc), "Enter any 3-digit test CVC.");
+
+        if (!ModelState.IsValid)
+        {
+            model.PlanName = "Free one-month trial";
+            model.Price = 0;
+            model.DurationDays = 30;
+            return View("TrialCheckout", model);
+        }
+
+        var now = DateTime.UtcNow;
+        try
+        {
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+
+            if (await HasUsedTrialAsync(user.Id))
+            {
+                await transaction.RollbackAsync();
+                TempData["Error"] = "The free trial has already been activated for this account.";
+                return RedirectToAction(nameof(Plans));
+            }
+
+            var subscription = new Subscription
+            {
+                UserId = user.Id,
+                PlanId = trialPlan.PlanId,
+                StartDate = now,
+                EndDate = now.AddDays(30),
+                Status = "Active"
+            };
+
+            _context.Subscriptions.Add(subscription);
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            TempData["Success"] = "Your free one-month trial has been activated. No payment was taken.";
+            return RedirectToAction(nameof(Plans));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to activate free trial for UserId={UserId}.", user.Id);
+            TempData["Error"] = "The free trial could not be activated. Please try again.";
+            return RedirectToAction(nameof(Plans));
+        }
     }
 
     private static bool PassesLuhnCheck(string digits)
@@ -124,7 +304,7 @@ public class MembershipController : Controller
     {
         var plan = await _context.MembershipPlans
             .AsNoTracking()
-            .FirstOrDefaultAsync(p => p.PlanId == planId && p.IsActive);
+            .FirstOrDefaultAsync(p => p.PlanId == planId && p.IsActive && p.Price > 0);
 
         if (plan is null)
         {
@@ -149,7 +329,7 @@ public class MembershipController : Controller
         if (user is null) return Challenge();
 
         var plan = await _context.MembershipPlans
-            .FirstOrDefaultAsync(p => p.PlanId == model.PlanId && p.IsActive);
+            .FirstOrDefaultAsync(p => p.PlanId == model.PlanId && p.IsActive && p.Price > 0);
 
         if (plan is null)
         {
@@ -161,9 +341,6 @@ public class MembershipController : Controller
         model.Price = plan.Price;
         model.DurationDays = plan.DurationDays;
 
-        // Local structural validation only: length + Luhn checksum.
-        // This does NOT verify that a real card exists or is active.
-        // The card number is never persisted or written to application logs.
         var rawCardNumber = model.CardNumber ?? string.Empty;
         var digitsOnlyCardNumber = new string(rawCardNumber
             .Where(char.IsDigit)

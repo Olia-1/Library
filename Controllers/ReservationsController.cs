@@ -27,7 +27,7 @@ public class ReservationsController : Controller
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var reservations = await _context.Reservations
-            .Include(r => r.Book)
+            .Include(r => r.Book).ThenInclude(b => b!.Translations)
             .Where(r => r.UserId == userId)
             .OrderByDescending(r => r.ReservationDate)
             .ToListAsync();
@@ -218,3 +218,4 @@ public class ReservationsController : Controller
         return RedirectToAction(nameof(Index));
     }
 }
+

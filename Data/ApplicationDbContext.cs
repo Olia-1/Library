@@ -183,6 +183,14 @@ public class ApplicationDbContext
             .HasForeignKey(x => x.CreatedBy)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.Entity<Event>()
+            .Property(x => x.ConferenceUrl)
+            .HasMaxLength(2048);
+
+        builder.Entity<Notification>()
+            .Property(x => x.ActionUrl)
+            .HasMaxLength(2048);
+
         builder.Entity<Notification>()
             .HasOne(x => x.User)
             .WithMany(x => x.Notifications)

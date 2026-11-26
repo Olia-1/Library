@@ -25,6 +25,12 @@
                 </div>
                 <p class="account-form-note account-form-field-full">First and last name are optional here. You will need to provide both names before making a book reservation.</p>
                 <div class="account-form-field account-form-field-full">
+                    <label asp-for="Email"></label>
+                    <input asp-for="Email" type="email" autocomplete="email" placeholder="name@example.com" />
+                    <span asp-validation-for="Email"></span>
+                    <small>This email will be used as your contact address when creating library events.</small>
+                </div>
+                <div class="account-form-field account-form-field-full">
                     <label asp-for="PhoneNumber"></label>
                     <input asp-for="PhoneNumber" autocomplete="tel" placeholder="380XXXXXXXXX" />
                     <span asp-validation-for="PhoneNumber"></span>

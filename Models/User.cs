@@ -13,7 +13,6 @@ public class User : IdentityUser<int>
 
     public bool IsFavoritesPublic { get; set; }
 
-    // Administrators can deactivate accounts without deleting their history.
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

@@ -10,11 +10,6 @@
     "Registration for this event is closed.": "Реєстрацію на цю подію завершено.",
     "You are already registered for this event.": "Ви вже зареєстровані на цю подію.",
     "You already have an active reservation for this book.": "У вас уже є активне бронювання цієї книги.",
-    "Classic Literature": "Класична література",
-    "Fantasy": "Фентезі",
-    "Mystery": "Детектив",
-    "Romance": "Романтика",
-    "Science Fiction": "Наукова фантастика",
     "Membership status": "Статус абонемента",
     "Membership valid until": "Абонемент дійсний до",
     "Membership": "Абонемент",
@@ -64,9 +59,6 @@
     "Full access to library membership features for six months.": "Повний доступ до функцій бібліотеки протягом шести місяців."
   });
 
-
-  // Server-side TempData feedback used across Reader, Librarian and Admin areas.
-  // Keeping these translations here lets the shared toast retain one visual style.
   Object.assign(dictionary, {
     "Please complete the required fields and check the entered values.": "Перевірте обов’язкові поля та правильність введених даних.",
     "Your changes have been saved.": "Ваші зміни збережено.",
@@ -245,25 +237,245 @@
     "Semi-Annual Membership": "Піврічний абонемент",
     "Three-Month Membership": "Тримісячний абонемент",
     "Six-Month Membership": "Піврічний абонемент",
-    "Classic Literature": "Класична література",
-    "Fantasy": "Фентезі",
-    "Mystery": "Детектив",
-    "Romance": "Романтика",
-    "Science Fiction": "Наукова фантастика"
+    "YOUR PRIVATE LIBRARY": "ВАША ПРИВАТНА БІБЛІОТЕКА",
+    "YOUR LIBRARY ACCOUNT": "ВАШ ОБЛІКОВИЙ ЗАПИС БІБЛІОТЕКИ",
+    "YOUR PERSONAL COLLECTION": "ВАША ОСОБИСТА КОЛЕКЦІЯ",
+    "READER FAVORITES": "ОБРАНЕ ЧИТАЧІВ",
+    "My Favorites": "Обране",
+    "Most Popular Books": "Найпопулярніші книги",
+    "The 20 books readers have added to their favorites most often.": "20 книг, які читачі найчастіше додають до обраного.",
+    "Ranked by number of favorites": "Рейтинг за кількістю додавань до обраного",
+    "Explore the catalog": "Переглянути каталог",
+    "books in the ranking": "книг у рейтингу",
+    "saved book": "збережена книга",
+    "saved books": "збережених книг",
+    "Share my collection": "Поділитися моєю колекцією",
+    "Public": "Публічна",
+    "Private": "Приватна",
+    "View public collection": "Переглянути публічну колекцію",
+    "Other readers can view your saved books.": "Інші читачі можуть переглядати збережені вами книги.",
+    "Added": "Додано",
+    "View book": "Переглянути книгу",
+    "reader's favorite": "читач додав до обраного",
+    "readers' favorites": "читачів додали до обраного",
+    "My Loans": "Мої позики",
+    "My Reservations": "Мої бронювання",
+    "All loans": "Усі позики",
+    "Overdue": "Прострочені",
+    "Returned": "Повернені",
+    "No loans in this section": "У цьому розділі немає позик",
+    "When you borrow a book from the library, it will appear here.": "Коли ви візьмете книгу в бібліотеці, вона з’явиться тут.",
+    "BORROWED BOOK": "КНИГА НА РУКАХ",
+    "Issued": "Видано",
+    "Due date": "Повернути до",
+    "Active reservations": "Активні бронювання",
+    "Ready for pickup": "Готові до отримання",
+    "Waiting in queue": "Очікують у черзі",
+    "History": "Історія",
+    "Search reservations": "Пошук бронювань",
+    "Search by book title…": "Пошук за назвою книги…",
+    "Sort by": "Сортувати за",
+    "Newest first": "Спочатку новіші",
+    "Oldest first": "Спочатку старіші",
+    "Book title": "Назва книги",
+    "Collection deadline": "Кінцевий термін отримання",
+    "Your reading list is waiting": "Ваш список читання чекає на вас",
+    "You haven't reserved any books yet. Explore the catalog and find your next read.": "Ви ще не бронювали книг. Перегляньте каталог і знайдіть наступну книгу для читання.",
+    "RESERVED BOOK": "ЗАБРОНЬОВАНА КНИГА",
+    "Reserved on": "Заброньовано",
+    "Collect by": "Отримати до",
+    "Ready": "Готово до отримання",
+    "Completed": "Завершено",
+    "Canceled": "Скасовано",
+    "Expired": "Термін минув",
+    "Notifications": "Сповіщення",
+    "Stay updated with your library activity.": "Будьте в курсі подій у вашій бібліотеці.",
+    "Category": "Категорія",
+    "All": "Усі",
+    "Ratings & Reviews": "Оцінки та рецензії",
+    "Reservations": "Бронювання",
+    "Membership": "Абонемент",
+    "Account": "Обліковий запис",
+    "Unread": "Не прочитано",
+    "Read": "Прочитано",
+    "Mark all as read": "Позначити всі як прочитані",
+    "Load more": "Завантажити ще",
+    "Loading...": "Завантаження...",
+    "Try again": "Спробувати ще раз",
+    "Clear filters": "Очистити фільтри",
+    "TODAY": "СЬОГОДНІ",
+    "YESTERDAY": "УЧОРА",
+    "Book returned": "Книгу повернуто",
+    "Book issued": "Книгу видано",
+    "Book reservation": "Бронювання книги",
+    "Join conference →": "Приєднатися до конференції →",
+    "BOOK REVIEW": "РЕЦЕНЗІЯ НА КНИГУ",
+    "Approved": "Схвалено",
+    "Submitted": "Надіслано",
+    "Edit review": "Редагувати рецензію",
+    "Delete review": "Видалити рецензію",
+    "Search event or organizer": "Пошук події або організатора",
+    "All statuses": "Усі статуси",
+    "All locations": "Усі місця проведення",
+    "On loan": "На руках",
+    "Book return overdue": "Термін повернення книги минув",
+    "Book return due today": "Книгу потрібно повернути сьогодні",
+    "Book return reminder": "Нагадування про повернення книги",
+    "Membership payment successful": "Оплату абонемента успішно здійснено",
+    "Membership expiring soon": "Термін дії абонемента скоро завершується",
+    "Event reminder": "Нагадування про подію",
+    "Your online event starts in one hour": "Ваша онлайн-подія розпочнеться за годину",
+    "Event": "Подія",
+    "January": "січня", "Jan": "січ.",
+    "February": "лютого", "Feb": "лют.",
+    "March": "березня", "Mar": "бер.",
+    "April": "квітня", "Apr": "квіт.",
+    "May": "травня",
+    "June": "червня", "Jun": "черв.",
+    "July": "липня", "Jul": "лип.",
+    "August": "серпня", "Aug": "серп.",
+    "September": "вересня", "Sep": "вер.",
+    "October": "жовтня", "Oct": "жовт.",
+    "November": "листопада", "Nov": "лист.",
+    "December": "грудня", "Dec": "груд.",
+    "Books in the ranking": "Книг у рейтингу",
+    "Review": "Рецензія",
+    "Event": "Подія",
+    "Reservations": "Бронювання",
+    "All statuses": "Усі статуси",
+    "All locations": "Усі місця проведення",
+    "Trial Membership · Manage": "Пробний абонемент · Керувати",
+    "Trial Membership": "Пробний абонемент",
+    "Manage": "Керувати",
+    "The field is required.": "Це поле обов’язкове.",
+    "The 'from' date cannot be later than the 'to' date.": "Дата «від» не може бути пізнішою за дату «до»."
+  });
+
+  Object.assign(dictionary, {
+    "Overview": "Огляд",
+    "Upcoming events": "Майбутні події",
+    "Past events": "Минулі події",
+    "In Library": "У бібліотеці",
+    "Online": "Онлайн",
+    "BOOK ON LOAN": "КНИГА НА РУКАХ",
+    "Issued": "Видано",
+    "Returned": "Повернуто",
+    "Due date": "Дата повернення",
+    "Due": "Повернути до",
+    "Overdue": "Прострочено",
+    "On loan": "На руках",
+    "Your rating was approved": "Вашу оцінку схвалено",
+    "Your review was approved": "Вашу рецензію схвалено",
+    "Search title, author, ISBN or publisher...": "Пошук за назвою, автором, ISBN або видавництвом...",
+    "All roles": "Усі ролі",
+    "Enter a whole year between 0 and 2026.": "Введіть цілий рік у межах від 0 до 2026.",
+    "The 'year from' value cannot be greater than the 'year to' value.": "Рік «від» не може бути більшим за рік «до»."
+  });
+
+  Object.assign(dictionary, {
+    "Account blocked?": "Обліковий запис заблоковано?",
+    "NEED HELP?": "ПОТРІБНА ДОПОМОГА?",
+    "If you believe your account was blocked by mistake, you can contact our team and request an appeal.": "Якщо ви вважаєте, що ваш обліковий запис заблокували помилково, зв’яжіться з нашою командою та подайте апеляцію.",
+    "Please include your username, registered email address, and a short description of the issue.": "Укажіть своє ім’я користувача, зареєстровану адресу електронної пошти та коротко опишіть проблему.",
+    "Read the Library Policy": "Переглянути правила бібліотеки",
+    "Library Policy": "Правила бібліотеки",
+    "Our community is built on respect, safety, and a shared love of reading.": "Наша спільнота ґрунтується на повазі, безпеці та спільній любові до читання.",
+    "Respectful Communication": "Повага у спілкуванні",
+    "All users are expected to communicate respectfully with other readers, event organizers, librarians, and administrators. The use of obscene, vulgar, abusive, discriminatory, or threatening language is not permitted.": "Усі користувачі повинні спілкуватися з повагою до інших читачів, організаторів подій, бібліотекарів та адміністраторів. Заборонено використовувати нецензурну, вульгарну, образливу, дискримінаційну або погрозливу лексику.",
+    "Harassment, bullying, intimidation, hate speech, personal attacks, insults, or any behavior intended to humiliate or offend another user are prohibited.": "Заборонені переслідування, цькування, залякування, мова ненависті, особисті нападки, образи та будь-яка поведінка, спрямована на приниження чи образу інших користувачів.",
+    "Responsible Use of the Library": "Відповідальне користування бібліотекою",
+    "Users must not publish offensive, unlawful, misleading, or inappropriate content in book reviews, ratings, event announcements, comments, or any other area of the website. Spam, advertising without permission, impersonation, and attempts to disrupt the service are also prohibited.": "Користувачам заборонено публікувати образливий, незаконний, оманливий або недоречний вміст у рецензіях, оцінках книг, оголошеннях про події, коментарях та інших розділах сайту. Також заборонені спам, реклама без дозволу, видавання себе за інших осіб і спроби порушити роботу сервісу.",
+    "Please respect other users' privacy. Do not publish another person's personal or contact information without their permission.": "Поважайте приватність інших користувачів. Не публікуйте особисту або контактну інформацію інших осіб без їхньої згоди.",
+    "Moderation and Account Restrictions": "Модерація та обмеження облікових записів",
+    "Private Library may review, hide, or remove content that violates this policy. Depending on the seriousness or repetition of the violation, we may issue a warning, restrict access to certain features, temporarily suspend, or permanently block the account.": "Адміністрація Private Library може перевіряти, приховувати або видаляти матеріали, що порушують ці правила. Залежно від серйозності або повторюваності порушення ми можемо винести попередження, обмежити доступ до окремих функцій, тимчасово призупинити або назавжди заблокувати обліковий запис.",
+    "These measures may be applied regardless of whether the account has an active paid subscription. Having a subscription does not exempt a user from the Library Policy or guarantee continued access when serious or repeated misconduct occurs.": "Ці заходи можуть застосовуватися незалежно від наявності активного платного абонемента. Наявність абонемента не звільняє користувача від дотримання правил бібліотеки та не гарантує подальший доступ у разі серйозних або повторних порушень.",
+    "Appealing an Account Restriction": "Оскарження обмеження облікового запису",
+    "If you believe that your account was restricted or blocked by mistake, you may contact the Private Library team and request a review. Please include your account username, the email address associated with the account, and a brief explanation of the situation. We will review the appeal and contact you using the details provided.": "Якщо ви вважаєте, що ваш обліковий запис обмежили або заблокували помилково, зверніться до команди Private Library та попросіть переглянути рішення. Укажіть ім’я користувача, адресу електронної пошти, пов’язану з обліковим записом, і коротко поясніть ситуацію. Ми розглянемо звернення та зв’яжемося з вами за наданими контактними даними.",
+    "Contact Information": "Контактні дані",
+    "For questions about this policy, reports of inappropriate behavior, or appeals of account restrictions, contact us:": "Якщо у вас є запитання щодо цих правил, ви хочете повідомити про неналежну поведінку або оскаржити обмеження облікового запису, зв’яжіться з нами:",
+    "Manage community events": "Керуйте подіями спільноти",
+    "Review, publish, hide or remove community events.": "Переглядайте, публікуйте, приховуйте або видаляйте події спільноти.",
+    "Browse, publish, hide, or delete community events.": "Переглядайте, публікуйте, приховуйте або видаляйте події спільноти.",
+    "Create Event": "Створити подію",
+    "Events": "Події",
+    "awaiting review": "очікують на перевірку",
+    "All statuses": "Усі статуси",
+    "Pending": "Очікує модерації",
+    "Approved": "Схвалено",
+    "Rejected": "Відхилено",
+    "All locations": "Усі місця проведення",
+    "In Library": "У бібліотеці",
+    "Online": "Онлайн",
+    "Apply filters": "Застосувати фільтри",
+    "Reset filters": "Скинути фільтри",
+    "Event date": "Дата події",
+    "Duration": "Тривалість",
+    "Moderation": "Модерація",
+    "Visibility": "Видимість",
+    "Visible": "Видима",
+    "Hidden": "Прихована",
+    "Status": "Статус",
+    "DATE & TIME": "ДАТА Й ЧАС",
+    "DURATION": "ТРИВАЛІСТЬ",
+    "Moderation: Pending": "Модерація: очікує",
+    "Moderation: Approved": "Модерація: схвалено",
+    "Moderation: Rejected": "Модерація: відхилено",
+    "Visibility: Visible": "Видимість: видима",
+    "Visibility: Hidden": "Видимість: прихована",
+    "Duration: 1 hr": "Тривалість: 1 год",
+    "Duration: 2 hrs": "Тривалість: 2 год",
+    "1 hr": "1 год",
+    "2 hrs": "2 год",
+    "3 hrs": "3 год",
+    "3+ hours": "3+ години",
+    "Search by book title...": "Пошук за назвою книги...",
+    "Reserved on": "Заброньовано",
+    "Collect by": "Отримати до",
+    "Due": "Повернути до",
+    "Due date": "Дата повернення",
+    "Reservation": "Бронювання",
+    "Ready": "Готова до отримання",
+    "Expired": "Термін минув",
+    "Canceled": "Скасовано",
+    "Completed": "Завершено",
+    "Active": "Активна",
+    "On loan": "На руках",
+    "Issued": "Видано",
+    "Returned": "Повернуто",
+    "Book returned": "Книгу повернуто",
+    "Book issued": "Книгу видано",
+    "Book reservation": "Бронювання книги",
+    "book found": "книгу знайдено",
+    "books found": "книг знайдено",
+    "No books found": "Книг не знайдено",
+    "The 'from' date cannot be later than the 'to' date.": "Дата «від» не може бути пізнішою за дату «до»."
   });
 
   const translate = value => {
     const trimmed = value.trim();
     if (!trimmed) return value;
     if (dictionary[trimmed]) return value.replace(trimmed, dictionary[trimmed]);
-    // Translate common dynamic labels while preserving their values.
+    if (/\d/.test(trimmed)) {
+      const dateWords = {
+        Monday:"понеділок", Tuesday:"вівторок", Wednesday:"середу", Thursday:"четвер", Friday:"п’ятниця", Saturday:"субота", Sunday:"неділя",
+        January:"січня", February:"лютого", March:"березня", April:"квітня", May:"травня", June:"червня", July:"липня", August:"серпня", September:"вересня", October:"жовтня", November:"листопада", December:"грудня",
+        Jan:"січ.", Feb:"лют.", Mar:"бер.", Apr:"квіт.", Jun:"черв.", Jul:"лип.", Aug:"серп.", Sep:"вер.", Oct:"жовт.", Nov:"лист.", Dec:"груд."
+      };
+      let dated = value;
+      for (const [english, ukrainian] of Object.entries(dateWords)) {
+        dated = dated.replace(new RegExp(`\\b${english}\\b`, "g"), ukrainian);
+      }
+      if (dated !== value) return dated;
+    }
     const patterns = [
-      [/^(\\d+) found$/, "Знайдено: $1"],
-      [/^(\\d+) books found$/, "Знайдено книг: $1"],
-      [/^(\\d+) active reservations$/, "активних бронювань: $1"],
-      [/^(\\d+) active records$/, "активних записів: $1"],
-      [/^(\\d+) readers found$/, "Знайдено читачів: $1"],
-      [/^(\\d+) book(s)? found$/, "Знайдено книг: $1"],
+      [/^(\d+) found$/, "Знайдено: $1"],
+      [/^(\d+) books found$/, "Знайдено книг: $1"],
+      [/^(\d+) active reservations$/, "активних бронювань: $1"],
+      [/^(\d+) active records$/, "активних записів: $1"],
+      [/^(\d+) ready$/, "готово до отримання: $1"],
+      [/^(\d+) notifications$/, "сповіщень: $1"],
+      [/^(\d+) readers found$/, "Знайдено читачів: $1"],
+      [/^(\d+) book(s)? found$/, "Знайдено книг: $1"],
       [/^Active \((.+)\)$/, "Активні ($1)"],
       [/^Archived \((.+)\)$/, "В архіві ($1)"],
       [/^Books \((.+)\)$/, "Книги ($1)"],
@@ -320,10 +532,36 @@
       [/^Review by (.+) for “(.+)” rejected\.$/, "Рецензію користувача $1 для книги «$2» відхилено."],
       [/^The event “(.+)” and its registrations have been deleted\.$/, "Подію «$1» та всі реєстрації на неї видалено."],
       [/^“(.+)” was issued to (.+)\.$/, "Книгу «$1» видано користувачу $2."],
-      [/^Return of “(.+)” by (.+) was registered\.$/, "Повернення книги «$1» користувачем $2 зареєстровано."]
+      [/^Return of “(.+)” by (.+) was registered\.$/, "Повернення книги «$1» користувачем $2 зареєстровано."],
+      [/^The return date for “(.+)” was (.+)\. Please return it as soon as possible\.$/, "Термін повернення книги «$1» минув ($2). Будь ласка, поверніть її якнайшвидше."],
+      [/^Today is the return date for “(.+)”\. Please return the book by the end of the day\.$/, "Сьогодні останній день повернення книги «$1». Будь ласка, поверніть її до кінця дня."],
+      [/^The book “(.+)” is due in 3 days, on (.+)\. Please return it on time\.$/, "Книгу «$1» потрібно повернути через 3 дні — $2. Будь ласка, поверніть її вчасно."],
+      [/^The book “(.+)” has been successfully returned\. Thank you!$/, "Книгу «$1» успішно повернуто. Дякуємо!"],
+      [/^The book “(.+)” has been issued to you\. Please return it by (.+)\.$/, "Книгу «$1» видано вам. Будь ласка, поверніть її до $2."],
+      [/^The book is available for pickup for (\d+) days?\. Reservation #(\d+)\.$/, "Книга доступна для отримання протягом $1 дн. Бронювання №$2."],
+      [/^Your (.+) membership expires on (.+)\. Renew it to continue using membership features\.$/, "Термін дії вашого абонемента «$1» завершується $2. Продовжіть його, щоб і надалі користуватися можливостями абонемента."],
+      [/^“(.+)” starts in one hour\. Use the link below to join the conference\.$/, "«$1» розпочнеться за годину. Скористайтеся посиланням нижче, щоб приєднатися до конференції."],
+      [/^Your payment for the (.+) membership plan was successful\. Your membership is active until (.+)\.$/, "Оплату тарифу «$1» успішно здійснено. Ваш абонемент активний до $2."],
+      [/^Enter a whole year between 0 and (\d+)\.$/, "Введіть цілий рік у межах від 0 до $1."],
+      [/^Your rating for “(.+)” has been approved and is now visible\.$/, "Вашу оцінку книги «$1» схвалено, і тепер вона доступна для перегляду."],
+      [/^Your review for “(.+)” has been approved and is now visible\.$/, "Вашу рецензію на книгу «$1» схвалено, і тепер вона доступна для перегляду."],
+      [/^The 'year from' value cannot be greater than the 'year to' value\.$/, "Рік «від» не може бути більшим за рік «до»."],
     ];
     for (const [pattern, replacement] of patterns) {
       if (pattern.test(trimmed)) return value.replace(trimmed, trimmed.replace(pattern, replacement));
+    }
+    let match = trimmed.match(/^Events\s*\((\d+)\)$/i);
+    if (match) return value.replace(trimmed, `Події (${match[1]})`);
+    match = trimmed.match(/^([0-9]+)\s+awaiting review$/i);
+    if (match) return value.replace(trimmed, `${match[1]} очікують на перевірку`);
+    match = trimmed.match(/^([＋+]?\s*)Create Event$/i);
+    if (match) return value.replace(trimmed, `${match[1]}Створити подію`);
+    match = trimmed.match(/^Duration:\s*(\d+(?:\.\d+)?)\s*hrs?$/i);
+    if (match) return value.replace(trimmed, `Тривалість: ${match[1]} год`);
+    match = trimmed.match(/^(Moderation|Visibility|Status):\s*(Pending|Approved|Rejected|Visible|Hidden)$/i);
+    if (match) {
+      const labels = {Moderation:"Модерація",Visibility:"Видимість",Status:"Статус",Pending:"очікує модерації",Approved:"схвалено",Rejected:"відхилено",Visible:"видима",Hidden:"прихована"};
+      return value.replace(trimmed, `${labels[match[1]]}: ${labels[match[2]]}`);
     }
     return value;
   };
@@ -354,4 +592,14 @@
     }
   });
   observer.observe(document.documentElement, {childList:true, subtree:true, characterData:true});
+
+  Object.assign(dictionary, {
+    "Users": "Користувачі",
+    "Search name or email": "Пошук за ім’ям або електронною поштою",
+    "Search name or email...": "Пошук за ім’ям або електронною поштою...",
+    "The 'from' date cannot be later than the 'to' date.": "Дата «від» не може бути пізнішою за дату «до».",
+    "The start date cannot be later than the end date.": "Початкова дата не може бути пізнішою за кінцеву.",
+    "Please enter a valid date range.": "Введіть коректний діапазон дат."
+  });
+
 })();

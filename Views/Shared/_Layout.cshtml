@@ -18,10 +18,6 @@
     var action = ViewContext.RouteData.Values["action"]?.ToString();
     var isAuthPage = controller == "Account" && (action == "Login" || action == "Register");
 
-    // All transient feedback uses the same Private Library toast. It is UI feedback only;
-    // it does not create or modify records in the Notifications center.
-    // Read every transient message key on each request so an older message
-    // cannot remain in TempData and appear on an unrelated page later.
     var adminErrorMessage = TempData["AdminError"] as string;
     var errorMessage = TempData["Error"] as string;
     var adminSuccessMessage = TempData["AdminMessage"] as string;
@@ -97,7 +93,14 @@
             @if (User.Identity?.IsAuthenticated == true)
             {
                 <div class="nav-user">
-                    <a class="user-greeting" asp-controller="Account" asp-action="Index">Account: @User.Identity.Name</a>
+                    @if (User.IsInRole("Reader"))
+                    {
+                        <a class="user-greeting" asp-controller="Account" asp-action="Index">Account: @User.Identity.Name</a>
+                    }
+                    else
+                    {
+                        <span class="user-greeting user-greeting-static">Account: @User.Identity.Name</span>
+                    }
                     <form asp-controller="Account" asp-action="Logout" method="post">
                         <button class="nav-signin" type="submit">Log out</button>
                     </form>

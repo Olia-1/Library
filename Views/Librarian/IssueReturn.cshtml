@@ -30,8 +30,6 @@
 
         </div>
 
-
-
         <nav class="librarian-tabs" aria-label="Book circulation actions">
 
             <a asp-action="IssueReturn" asp-route-tab="issue" class="@(!isReturnTab ? "active" : "")" aria-current="@(!isReturnTab ? "page" : null)">Issue Book</a>
@@ -39,8 +37,6 @@
             <a asp-action="IssueReturn" asp-route-tab="return" class="@(isReturnTab ? "active" : "")" aria-current="@(isReturnTab ? "page" : null)">Return Book</a>
 
         </nav>
-
-
 
         @if (!isReturnTab)
 
@@ -73,8 +69,6 @@
                 <button class="librarian-search-button" type="submit">Search</button>
 
             </form>
-
-
 
             <form asp-action="IssueBook" method="post" class="librarian-issue-form">
 
@@ -217,8 +211,6 @@
                     </div>
 
                 </div>
-
-
 
                 <div class="librarian-issue-footer">
 

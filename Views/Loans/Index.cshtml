@@ -48,13 +48,13 @@
                 <div class="member-record-cover">
                     @if (!string.IsNullOrWhiteSpace(loan.Copy?.Book?.CoverImageUrl))
                     {
-                        <img src="@loan.Copy.Book.CoverImageUrl" alt="Cover of @loan.Copy.Book.Title" />
+                        <img src="@loan.Copy.Book.CoverImageUrl" alt="Cover of @loan.Copy.Book.DisplayTitle" />
                     }
                     else { <span aria-hidden="true">✧</span> }
                 </div>
                 <div class="member-record-main">
                     <span class="member-record-eyebrow">BORROWED BOOK</span>
-                    <h2><a asp-controller="Books" asp-action="Details" asp-route-id="@loan.Copy?.BookId">@loan.Copy?.Book?.Title</a></h2>
+                    <h2><a asp-controller="Books" asp-action="Details" asp-route-id="@loan.Copy?.BookId">@loan.Copy?.Book?.DisplayTitle</a></h2>
                     <p class="member-record-author">@authors</p>
                     <div class="member-record-meta">
                         <span>Issued <strong>@loan.IssueDate.ToLocalTime().ToString("dd MMM yyyy", System.Globalization.CultureInfo.GetCultureInfo("en-GB"))</strong></span>

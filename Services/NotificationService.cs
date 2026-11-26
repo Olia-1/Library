@@ -5,7 +5,6 @@ using PrivateLibrary.Models;
 
 namespace PrivateLibrary.Services;
 
-/// <summary>Creates in-app notifications exclusively for Reader accounts.</summary>
 public class NotificationService
 {
     private readonly ApplicationDbContext _context;
@@ -73,10 +72,6 @@ public class NotificationService
         }
         if (participantIds.Count > 0) await _context.SaveChangesAsync();
     }
-    /// <summary>
-    /// Creates a Reader notification after a subscription payment has been confirmed.
-    /// Call this only after the payment status has been saved as successful.
-    /// </summary>
     public async Task NotifySubscriptionPaymentSucceededAsync(int subscriptionId)
     {
         var subscription = await _context.Subscriptions

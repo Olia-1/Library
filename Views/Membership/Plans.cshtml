@@ -4,6 +4,15 @@
     var active = Model.ActiveSubscription;
 }
 <style>
+.trial-offer-backdrop{position:fixed;inset:0;z-index:1200;display:grid;place-items:center;padding:18px;background:rgba(49,35,23,.48);backdrop-filter:blur(3px)}
+.trial-offer-card{width:min(100%,480px);padding:30px;border:1px solid #e7d5bc;border-radius:20px;background:#fffaf3;box-shadow:0 22px 70px rgba(40,27,15,.24);color:#604832}
+.trial-offer-card h2{margin:9px 0 10px;font:700 28px/1.2 'Playfair Display',serif}
+.trial-offer-card p,.trial-offer-card li{color:#806c58;font-size:14px;line-height:1.6}
+.trial-offer-card ul{padding-left:20px;margin:14px 0}
+.trial-agreement-check{display:flex;align-items:flex-start;gap:10px;margin:18px 0;color:#604832;font-size:13px;line-height:1.5}
+.trial-agreement-check input{margin-top:3px;accent-color:#805633}
+.trial-offer-card form .membership-buy{width:100%}
+.trial-dismiss{display:block;margin-top:14px;text-align:center;color:#806c58;font-size:13px}
 .membership-page{max-width:1120px;margin:36px auto 70px;padding:0 22px;color:#604832}
 .membership-hero{background:#fbf6ed;border:1px solid #eadcc8;border-radius:22px;padding:30px;margin-bottom:25px}
 .membership-eyebrow{font-size:12px;letter-spacing:2px;font-weight:700;color:#a77a50}
@@ -71,6 +80,24 @@
         }
     </section>
 
+    @if (Model.CanStartTrial)
+    {
+        <div class="trial-offer-backdrop" role="dialog" aria-modal="true" aria-labelledby="trialOfferTitle">
+            <section class="trial-offer-card">
+                <span class="membership-eyebrow">A GIFT FOR NEW READERS</span>
+                <h2 id="trialOfferTitle">Enjoy your first month free</h2>
+                <p>Activate a 30-day trial membership. Before activation, you will confirm the terms and verify a test card. No money will be charged.</p>
+                <form asp-action="AcceptTrialTerms" method="post">
+                    <label class="trial-agreement-check">
+                        <input type="checkbox" name="accepted" value="true" required />
+                        <span>I agree to the trial terms and understand this is a local test simulation.</span>
+                    </label>
+                    <button type="submit" class="membership-buy">Agree and continue</button>
+                </form>
+                <a asp-controller="Books" asp-action="Index" class="trial-dismiss">Maybe later</a>
+            </section>
+        </div>
+    }
 
     <section class="membership-overview">
         <h2>Your Membership Overview</h2>

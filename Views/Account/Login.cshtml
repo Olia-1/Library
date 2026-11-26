@@ -9,33 +9,65 @@
         <span class="auth-brand-name">Library</span>
         <span class="auth-brand-tagline">Private Library</span>
     </a>
-    <section class="auth-card">
-        <h1>Login</h1>
-        <p class="auth-intro">Welcome back!<br />Log in to your account to access the catalog, make reservations, and explore other library features.</p>
-        <form asp-action="Login" method="post" class="auth-form">
-            <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
-            <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
-            <label class="input-wrap">
-                <span class="field-icon" aria-hidden="true">✉</span>
-                <input asp-for="UserName" autocomplete="username" placeholder="Email or username" aria-label="Email or username" />
-            </label>
-            <span asp-validation-for="UserName" class="field-validation"></span>
-            <label class="input-wrap">
-                <span class="field-icon" aria-hidden="true">♙</span>
-                <input asp-for="Password" id="loginPassword" type="password" autocomplete="current-password" placeholder="Password" aria-label="Password" />
-                <button class="password-toggle" type="button" data-toggle-password="loginPassword" aria-label="Show password">◉</button>
-            </label>
-            <span asp-validation-for="Password" class="field-validation"></span>
-            <div class="auth-options">
-                <label class="remember-option"><input asp-for="RememberMe" /> <span>Remember me</span></label>
-                <a asp-controller="Account" asp-action="Login" class="subtle-link" title="Contact the library administrator to reset your password">Forgot password?</a>
+    <div class="auth-content-row">
+        <section class="auth-card">
+            <h1>Login</h1>
+            <p class="auth-intro">Welcome back!<br />Log in to your account to access the catalog, make reservations, and explore other library features.</p>
+            <form asp-action="Login" method="post" class="auth-form">
+                <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+                <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+                <label class="input-wrap">
+                    <span class="field-icon" aria-hidden="true">✉</span>
+                    <input asp-for="UserName" autocomplete="username" placeholder="Email or username" aria-label="Email or username" />
+                </label>
+                <span asp-validation-for="UserName" class="field-validation"></span>
+                <label class="input-wrap">
+                    <span class="field-icon" aria-hidden="true">♙</span>
+                    <input asp-for="Password" id="loginPassword" type="password" autocomplete="current-password" placeholder="Password" aria-label="Password" />
+                    <button class="password-toggle" type="button" data-toggle-password="loginPassword" aria-label="Show password">◉</button>
+                </label>
+                <span asp-validation-for="Password" class="field-validation"></span>
+                <div class="auth-options">
+                    <label class="remember-option"><input asp-for="RememberMe" /> <span>Remember me</span></label>
+                </div>
+                <button type="submit" class="auth-submit">Log In</button>
+            </form>
+            <div class="auth-switch">
+                <span class="auth-help-trigger" id="openAccountHelp" role="button" tabindex="0">Account blocked?</span>
+                <span class="auth-signup-prompt">Don't have an account? <a asp-action="Register">Sign up</a></span>
             </div>
-            <button type="submit" class="auth-submit">Log In</button>
-        </form>
-        <p class="auth-switch">Don't have an account? <a asp-action="Register">Sign up</a></p>
-    </section>
+        </section>
+
+        <dialog class="auth-help-dialog" id="accountHelpDialog" aria-labelledby="accountHelpTitle">
+            <button type="button" class="auth-help-close" id="closeAccountHelp" aria-label="Close">×</button>
+            <div class="auth-help-dialog-content">
+                <span class="auth-help-ornament" aria-hidden="true">❧</span>
+                <p class="auth-help-eyebrow">NEED HELP?</p>
+                <h2 id="accountHelpTitle">Account blocked?</h2>
+                <p>If you believe your account was blocked by mistake, you can contact our team and request an appeal.</p>
+                <p>Please include your username, registered email address, and a short description of the issue.</p>
+                <a class="auth-help-email" href="mailto:PrivatLibrary@gmail.com">PrivatLibrary@gmail.com</a>
+                <a class="auth-help-policy" asp-controller="Home" asp-action="Privacy">Read the Library Policy</a>
+            </div>
+        </dialog>
+    </div>
     <div class="auth-book-decoration" aria-hidden="true"><span></span><span></span><span></span></div>
 </div>
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const dialog = document.getElementById('accountHelpDialog');
+            const openButton = document.getElementById('openAccountHelp');
+            const closeButton = document.getElementById('closeAccountHelp');
+
+            if (!dialog || !openButton || !closeButton) return;
+
+            openButton.addEventListener('click', () => dialog.showModal());
+            closeButton.addEventListener('click', () => dialog.close());
+            dialog.addEventListener('click', event => {
+                if (event.target === dialog) dialog.close();
+            });
+        })();
+    </script>
 }

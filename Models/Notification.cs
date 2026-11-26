@@ -21,6 +21,9 @@ public class Notification
     [StringLength(30)]
     public string? RelatedEntityType { get; set; }
 
+    [StringLength(2048)]
+    public string? ActionUrl { get; set; }
+
     public int? RelatedEntityId { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

@@ -13,8 +13,6 @@ public class ProfileController : Controller
 
     public ProfileController(ApplicationDbContext context) => _context = context;
 
-    // Public profiles show only community content that has passed moderation.
-    // A reader's favorites are loaded only when the owner has made them public.
     [HttpGet("{id:int}")]
     public async Task<IActionResult> Index(int id)
     {
@@ -44,18 +42,17 @@ public class ProfileController : Controller
             FavoritesArePublic = user.IsFavoritesPublic
         };
 
-        // The application keeps ratings and reviews available to signed-in readers only.
         if (User.Identity?.IsAuthenticated == true)
         {
             model.Reviews = await _context.Reviews.AsNoTracking()
                 .Where(r => r.UserId == id && r.ModerationStatus == "Approved")
-                .Include(r => r.Book)
+                .Include(r => r.Book).ThenInclude(b => b!.Translations)
                 .OrderByDescending(r => r.CreatedAt)
                 .ToListAsync();
 
             model.Ratings = await _context.Ratings.AsNoTracking()
                 .Where(r => r.UserId == id && r.ModerationStatus == "Approved")
-                .Include(r => r.Book)
+                .Include(r => r.Book).ThenInclude(b => b!.Translations)
                 .OrderByDescending(r => r.CreatedAt)
                 .ToListAsync();
         }
@@ -65,10 +62,11 @@ public class ProfileController : Controller
             model.Favorites = await _context.Favorites.AsNoTracking()
                 .Where(f => f.UserId == id)
                 .Include(f => f.Book)
-                    .ThenInclude(b => b!.Genre)
+                    .ThenInclude(b => b!.Genre).ThenInclude(g => g!.Translations)
+                .Include(f => f.Book).ThenInclude(b => b!.Translations)
                 .Include(f => f.Book)
                     .ThenInclude(b => b!.BookAuthors)
-                        .ThenInclude(ba => ba.Author)
+                        .ThenInclude(ba => ba.Author).ThenInclude(a => a.Translations)
                 .OrderByDescending(f => f.AddedAt)
                 .ToListAsync();
         }

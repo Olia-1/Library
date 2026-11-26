@@ -5,7 +5,6 @@ using PrivateLibrary.Models;
 
 namespace PrivateLibrary.Services;
 
-/// <summary>Creates time-based reminders once per loan/subscription.</summary>
 public class NotificationMaintenanceService
 {
     private readonly ApplicationDbContext _context;
@@ -17,7 +16,6 @@ public class NotificationMaintenanceService
         var today = DateTime.UtcNow.Date;
         var reminderLimit = today.AddDays(3);
 
-        // Only active Reader accounts receive personal notifications.
         var readerIds = from user in _context.Users
                         join userRole in _context.UserRoles on user.Id equals userRole.UserId
                         join role in _context.Roles on userRole.RoleId equals role.Id
@@ -106,6 +104,72 @@ public class NotificationMaintenanceService
         if (_context.ChangeTracker.HasChanges())
             await _context.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task CreateOnlineEventRemindersAsync(CancellationToken cancellationToken = default)
+    {
+        var now = DateTime.Now;
+        var reminderCutoff = now.AddHours(1);
+
+        var upcomingEvents = await _context.Events
+            .AsNoTracking()
+            .Include(e => e.Participants)
+            .Where(e => e.Location == "Online" &&
+                        e.ConferenceUrl != null && e.ConferenceUrl != "" &&
+                        e.Status != "Cancelled" &&
+                        e.IsVisible &&
+                        (e.ModerationStatus == "Approved" || e.ModerationStatus == null) &&
+                        e.EventDate > now &&
+                        e.EventDate <= reminderCutoff)
+            .ToListAsync(cancellationToken);
+
+        foreach (var onlineEvent in upcomingEvents)
+        {
+            var participantIds = onlineEvent.Participants
+                .Where(p => p.Status == "Registered")
+                .Select(p => p.UserId)
+                .Distinct()
+                .ToList();
+
+            if (participantIds.Count == 0)
+                continue;
+
+            var activeReaderIds = await (from user in _context.Users
+                                         join userRole in _context.UserRoles on user.Id equals userRole.UserId
+                                         join role in _context.Roles on userRole.RoleId equals role.Id
+                                         where participantIds.Contains(user.Id) &&
+                                               user.IsActive && role.Name == "Reader"
+                                         select user.Id).Distinct().ToListAsync(cancellationToken);
+
+            foreach (var userId in activeReaderIds)
+            {
+                var alreadySent = await _context.Notifications.AnyAsync(n =>
+                    n.UserId == userId &&
+                    n.Type == "EventReminder" &&
+                    n.RelatedEntityType == "Event" &&
+                    n.RelatedEntityId == onlineEvent.EventId,
+                    cancellationToken);
+
+                if (alreadySent)
+                    continue;
+
+                _context.Notifications.Add(new Notification
+                {
+                    UserId = userId,
+                    Title = "Your online event starts in one hour",
+                    Message = $"“{onlineEvent.Title}” starts in one hour. Use the link below to join the conference.",
+                    Type = "EventReminder",
+                    RelatedEntityType = "Event",
+                    RelatedEntityId = onlineEvent.EventId,
+                    ActionUrl = onlineEvent.ConferenceUrl,
+                    CreatedAt = DateTime.UtcNow,
+                    IsRead = false
+                });
+            }
+        }
+
+        if (_context.ChangeTracker.HasChanges())
+            await _context.SaveChangesAsync(cancellationToken);
+    }
 }
 
 public class NotificationReminderWorker : BackgroundService
@@ -121,18 +185,40 @@ public class NotificationReminderWorker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        var lastDailyRun = DateTime.MinValue;
+
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
                 using var scope = _scopeFactory.CreateScope();
                 var maintenance = scope.ServiceProvider.GetRequiredService<NotificationMaintenanceService>();
-                await maintenance.CreateDailyRemindersAsync(stoppingToken);
-            }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }
-            catch (Exception ex) { _logger.LogError(ex, "Failed to create scheduled library notifications."); }
 
-            await Task.Delay(TimeSpan.FromHours(24), stoppingToken);
+                if (DateTime.UtcNow.Date > lastDailyRun.Date)
+                {
+                    await maintenance.CreateDailyRemindersAsync(stoppingToken);
+                    lastDailyRun = DateTime.UtcNow;
+                }
+
+                await maintenance.CreateOnlineEventRemindersAsync(stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create scheduled library notifications.");
+            }
+
+            try
+            {
+                await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
         }
     }
 }

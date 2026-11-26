@@ -1,9 +1,5 @@
-// Responsive navigation menu
 document.addEventListener("DOMContentLoaded", () => {
 
-    // Replace browser-native validation bubbles with the branded Private Library toast.
-    // Native constraint validation is disabled visually only; checkValidity() still
-    // enforces the same required/type/range rules before a form can be submitted.
     const toastElement = document.getElementById("siteToast");
     const toastTextElement = document.getElementById("siteToastMessage");
     let validationToastTimer = null;
@@ -32,7 +28,6 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     document.querySelectorAll("form").forEach(form => {
-        // Prevent Chrome/Edge's unstyled "Please select one..." tooltip.
         form.noValidate = true;
     });
 
@@ -63,7 +58,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Show/hide password fields on account pages
     document.querySelectorAll("[data-toggle-password]").forEach(button => {
         button.addEventListener("click", () => {
             const input = document.getElementById(button.dataset.togglePassword);
@@ -75,8 +69,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // Visual favorite toggle for the homepage mockup.
-    // Persisting favorites should be implemented with the logged-in user's database record.
     document.querySelectorAll(".favorite-toggle").forEach(button => {
         button.addEventListener("click", () => {
             const active = button.getAttribute("aria-pressed") === "true";
@@ -85,8 +77,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // Notification cards open their related destination and mark themselves as read.
-    // Delegation also supports cards appended by the Load more button.
     document.addEventListener("click", event => {
         const card = event.target.closest("[data-notification-card]");
         if (!card) return;
@@ -103,7 +93,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (form) form.requestSubmit();
     });
 
-    // Branded confirmation dialog for important site actions.
     const confirmDialog = document.getElementById("siteConfirmDialog");
     const confirmTitle = document.getElementById("siteConfirmTitle");
     const confirmMessage = document.getElementById("siteConfirmMessage");
@@ -163,7 +152,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Branded informational dialog for actions that require sign-in or membership.
     const messageDialog = document.getElementById("siteMessageDialog");
     const messageTitle = document.getElementById("siteMessageTitle");
     const messageText = document.getElementById("siteMessageText");
@@ -191,7 +179,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Event creation: calendar date picker + available 30-minute start-time slots.
     const createEventForm = document.getElementById("createEventForm");
     const eventLocation = document.getElementById("eventLocation");
     const eventDuration = document.getElementById("eventDuration");
@@ -308,7 +295,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Centered Private Library toast for successful actions. It disappears after 2 seconds.
     const autoToast = document.querySelector("[data-site-toast-autoshow='true']");
     const siteToast = document.getElementById("siteToast");
     const siteToastMessage = document.getElementById("siteToastMessage");
@@ -324,8 +310,6 @@ document.addEventListener("DOMContentLoaded", () => {
         );
     }
 
-
-    // Favorites: toggle without page reload; the heart itself communicates the state.
     document.addEventListener("click", async event => {
         const button = event.target.closest("[data-favorite-toggle]");
         if (!button || button.disabled) return;
@@ -393,7 +377,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Favorites visibility is private by default and can only be changed by the owner.
     const publicToggle = document.getElementById("favoritesPublicToggle");
     if (publicToggle) {
         publicToggle.addEventListener("change", async () => {

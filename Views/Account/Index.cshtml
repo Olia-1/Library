@@ -76,10 +76,10 @@
         <section class="account-overview" aria-label="Activity overview">
             <div class="account-overview-heading"><h2>Activity Overview</h2></div>
             <div class="account-overview-grid">
-                <a href="#my-reservations"><strong>@Model.ActiveReservationsCount</strong><span>Active Reservations</span></a>
+                <a asp-controller="Reservations" asp-action="Index"><strong>@Model.ActiveReservationsCount</strong><span>Active Reservations</span></a>
                 <a asp-controller="Loans" asp-action="Index"><strong>@Model.ActiveLoansCount</strong><span>Books on Loan</span></a>
                 <a asp-controller="Reviews" asp-action="Index"><strong>@Model.ReviewsCount</strong><span>Reviews Written</span></a>
-                <a href="#my-favorites"><strong>@Model.FavoritesCount</strong><span>Favorite Books</span></a>
+                <a asp-controller="Favorites" asp-action="Index"><strong>@Model.FavoritesCount</strong><span>Favorite Books</span></a>
             </div>
         </section>
 
@@ -95,7 +95,7 @@
                     <div class="account-compact-list">
                         @foreach (var reservation in Model.RecentReservations)
                         {
-                            <div class="account-compact-item"><span class="account-item-symbol">▤</span><div><strong>@reservation.Book?.Title</strong><small>Reserved on @reservation.ReservationDate.ToLocalTime().ToString("dd MMM yyyy")</small></div><span class="account-pill">@reservation.Status</span></div>
+                            <div class="account-compact-item"><span class="account-item-symbol">▤</span><div><strong>@reservation.Book?.DisplayTitle</strong><small>Reserved on @reservation.ReservationDate.ToLocalTime().ToString("dd MMM yyyy")</small></div><span class="account-pill">@reservation.Status</span></div>
                         }
                     </div>
                 }
@@ -112,7 +112,7 @@
                     <div class="account-compact-list">
                         @foreach (var loan in Model.ActiveLoans)
                         {
-                            <div class="account-compact-item"><span class="account-item-symbol">▣</span><div><strong>@loan.Copy?.Book?.Title</strong><small>Due @loan.DueDate.ToLocalTime().ToString("dd MMM yyyy")</small></div><span class="account-pill">Active</span></div>
+                            <div class="account-compact-item"><span class="account-item-symbol">▣</span><div><strong>@loan.Copy?.Book?.DisplayTitle</strong><small>Due @loan.DueDate.ToLocalTime().ToString("dd MMM yyyy")</small></div><span class="account-pill">Active</span></div>
                         }
                     </div>
                 }

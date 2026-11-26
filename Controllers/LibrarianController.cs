@@ -314,7 +314,6 @@ public class LibrarianController : Controller
 
         }
 
-
         await _context.SaveChangesAsync();
 
         await _notificationService.NotifyUserAsync(
@@ -332,7 +331,6 @@ public class LibrarianController : Controller
     [HttpGet]
     public async Task<IActionResult> Reservations(string? search, string? status)
     {
-        // Counts are based on all active reservations, not only the current filter.
         var activeReservations = _context.Reservations.AsNoTracking()
             .Where(r => r.Status == "Pending" || r.Status == "Ready");
 
@@ -430,7 +428,6 @@ public class LibrarianController : Controller
         return View(model);
     }
 
-    // Librarian catalog: operational management only. Archiving and deletion remain Admin-only.
     [HttpGet]
     public async Task<IActionResult> Books(
         string? search,
@@ -551,7 +548,6 @@ public async Task<IActionResult> EditBook(int id)
     return View(model);
 }
 
-
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> EditBook(AdminBookViewModel model)
     {
@@ -627,6 +623,5 @@ public async Task<IActionResult> EditBook(int id)
 
         return View(model);
     }
-
 
 }

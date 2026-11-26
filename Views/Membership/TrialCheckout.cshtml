@@ -1,0 +1,85 @@
+@model TestCardCheckoutViewModel
+@{
+    ViewData["Title"] = "Free Trial Card Verification";
+}
+<style>
+.test-checkout-page{max-width:760px;margin:38px auto 70px;padding:0 20px;color:#604832}
+.test-checkout-card{background:#fffaf3;border:1px solid #eadcc8;border-radius:20px;padding:28px;box-shadow:0 8px 24px rgba(89,63,38,.05)}
+.test-checkout-eyebrow{font-size:12px;letter-spacing:2px;font-weight:700;color:#a77a50}
+.test-checkout-card h1{font-family:'Playfair Display',serif;font-size:30px;margin:8px 0 6px}
+.test-checkout-subtitle{color:#806c58;line-height:1.6;margin:0 0 20px}
+.test-checkout-plan{display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap;background:#f4efe5;border-radius:12px;padding:15px 17px;margin:18px 0 20px}
+.test-checkout-plan strong{color:#604832}
+.test-checkout-form{display:grid;gap:15px}
+.test-checkout-field{display:grid;gap:6px}
+.test-checkout-field label{font-size:13px;font-weight:700;color:#735a42}
+.test-checkout-field input{width:100%;box-sizing:border-box;border:1px solid #e5d5c1;background:#fffdf9;border-radius:10px;padding:12px 13px;color:#604832;font:inherit;outline:none}
+.test-checkout-field input:focus{border-color:#9a704a;box-shadow:0 0 0 3px rgba(154,112,74,.12)}
+.test-checkout-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.test-checkout-validation{color:#a13e32;font-size:12px}
+.test-checkout-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:5px}
+.test-checkout-submit,.test-checkout-cancel{display:inline-flex;justify-content:center;align-items:center;border:0;border-radius:10px;padding:12px 18px;text-decoration:none;font-weight:700;cursor:pointer}
+.test-checkout-submit{background:#805633;color:#fffaf3;flex:1}
+.test-checkout-submit:hover{background:#624127}
+.test-checkout-cancel{background:#eee5d8;color:#735a42}
+.test-checkout-footnote{font-size:12px;color:#8a765f;line-height:1.55;margin-top:18px}
+@@media(max-width:560px){.test-checkout-card{padding:20px}.test-checkout-row{grid-template-columns:1fr 1fr}.test-checkout-row .test-checkout-field:last-child{grid-column:1/-1}}
+</style>
+
+<main class="test-checkout-page">
+    <section class="test-checkout-card">
+        <span class="test-checkout-eyebrow">PRIVATE LIBRARY · FREE TRIAL</span>
+        <h1>Activate your free trial</h1>
+        <p class="test-checkout-subtitle">Verify a test card to activate your first 30 days of membership. This local demo does not contact a bank or payment provider.</p>
+
+        <div class="test-checkout-plan">
+            <div>
+                <strong>Free one-month trial</strong><br />
+                <span>30 days of free membership</span>
+            </div>
+            <strong>FREE</strong>
+        </div>
+        <form asp-action="VerifyTrialCard" method="post" class="test-checkout-form" autocomplete="off">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="PlanId" />
+
+            <div class="test-checkout-field">
+                <label asp-for="CardholderName">Cardholder name</label>
+                <input asp-for="CardholderName" placeholder="TEST USER" maxlength="80" autocomplete="off" />
+                <span asp-validation-for="CardholderName" class="test-checkout-validation"></span>
+            </div>
+
+            <div class="test-checkout-field">
+                <label asp-for="CardNumber">Card number (test data only)</label>
+                <input asp-for="CardNumber" placeholder="13–19 digits" inputmode="numeric" maxlength="37" autocomplete="off" />
+                <span asp-validation-for="CardNumber" class="test-checkout-validation"></span>
+            </div>
+
+            <div class="test-checkout-row">
+                <div class="test-checkout-field">
+                    <label asp-for="ExpiryMonth">Expiry month</label>
+                    <input asp-for="ExpiryMonth" placeholder="MM" inputmode="numeric" maxlength="2" autocomplete="off" />
+                    <span asp-validation-for="ExpiryMonth" class="test-checkout-validation"></span>
+                </div>
+                <div class="test-checkout-field">
+                    <label asp-for="ExpiryYear">Expiry year</label>
+                    <input asp-for="ExpiryYear" placeholder="YYYY" inputmode="numeric" maxlength="4" autocomplete="off" />
+                </div>
+                <div class="test-checkout-field">
+                    <label asp-for="Cvc">CVC</label>
+                    <input asp-for="Cvc" placeholder="123" inputmode="numeric" maxlength="3" autocomplete="off" />
+                    <span asp-validation-for="Cvc" class="test-checkout-validation"></span>
+                </div>
+            </div>
+
+            <div class="test-checkout-actions">
+                <button type="submit" class="test-checkout-submit">Verify card and activate trial</button>
+                <a asp-action="Plans" class="test-checkout-cancel">Cancel</a>
+            </div>
+        </form>
+
+        <p class="test-checkout-footnote">
+            This is a local educational simulation only. The number is checked for length and Luhn checksum. This cannot establish whether a bank card exists, is active, has funds, or belongs to the person entering it. Never enter real payment details.
+        </p>
+    </section>
+</main>

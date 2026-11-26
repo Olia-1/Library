@@ -21,7 +21,8 @@ public class ReviewsController : Controller
         var query = _context.Reviews.AsNoTracking()
             .Where(r => r.UserId == userId)
             .Include(r => r.Book)
-                .ThenInclude(b => b!.BookAuthors).ThenInclude(ba => ba.Author)
+                .ThenInclude(b => b!.Translations)
+            .Include(r => r.Book).ThenInclude(b => b!.BookAuthors).ThenInclude(ba => ba.Author).ThenInclude(a => a.Translations)
             .AsQueryable();
 
         query = filter.ToLowerInvariant() switch

@@ -17,7 +17,6 @@ public class HomeController : Controller
 
     public async Task<IActionResult> Index()
     {
-        // Show only books that have at least one copy currently marked Available.
         var availableBooks = await _context.Books
             .AsNoTracking()
             .Include(b => b.Genre)

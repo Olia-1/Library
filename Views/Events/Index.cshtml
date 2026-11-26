@@ -18,6 +18,10 @@
             {
                 <a class="events-create-button" asp-action="Create">Create event <span aria-hidden="true">＋</span></a>
             }
+            else if (Model.CreateEventMessage?.Contains("email address", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                <a class="events-create-button" asp-controller="Account" asp-action="EditProfile">Add email to profile <span aria-hidden="true">＋</span></a>
+            }
             else
             {
                 <button class="events-create-button" type="button"

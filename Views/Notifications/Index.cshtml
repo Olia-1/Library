@@ -100,8 +100,6 @@
                     template.innerHTML = html.trim();
                     const wrapper = template.content.querySelector('[data-notification-results]');
                     if (wrapper) {
-                        // Merge incoming date groups with groups already on the page.
-                        // This prevents the same date heading from appearing twice across pagination.
                         wrapper.querySelectorAll('.notification-date-group').forEach((incomingGroup) => {
                             const dateKey = incomingGroup.dataset.notificationDate;
                             const existingGroup = dateKey
@@ -140,7 +138,6 @@
                 }
             });
 
-            // Open a notification when its card is clicked or activated by keyboard.
             const openCard = (card) => {
                 const form = card?.querySelector('.notification-card-open-form');
                 if (form) form.requestSubmit();

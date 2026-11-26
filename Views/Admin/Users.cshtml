@@ -16,9 +16,25 @@
 
         <section class="admin-panel">
             <div class="admin-panel-heading">
-                <h2>All users (@Model.Count)</h2>
+                <h2>Users (@Model.Count)</h2>
                 <span class="admin-muted">Readers, librarians and administrators</span>
             </div>
+            <form method="get" asp-action="Users" class="admin-filter-form">
+                <input type="search" name="search" value="@ViewBag.Search" placeholder="Search name or email" aria-label="Search name or email" />
+                <select name="role" aria-label="Filter by role">
+                    <option value="">All roles</option>
+                    <option value="Reader" selected="@(ViewBag.Role as string == "Reader")">Reader</option>
+                    <option value="Librarian" selected="@(ViewBag.Role as string == "Librarian")">Librarian</option>
+                    <option value="Admin" selected="@(ViewBag.Role as string == "Admin")">Admin</option>
+                </select>
+                <select name="status" aria-label="Filter by account status">
+                    <option value="">All statuses</option>
+                    <option value="active" selected="@(ViewBag.Status as string == "active")">Active</option>
+                    <option value="deactivated" selected="@(ViewBag.Status as string == "deactivated")">Deactivated</option>
+                </select>
+                <button type="submit" class="admin-secondary-button">Apply filters</button>
+                <a class="admin-secondary-button" asp-action="Users">Reset</a>
+            </form>
             @if (Model.Count == 0)
             {
                 <div class="admin-empty">No user accounts were found.</div>
@@ -53,12 +69,16 @@
                                         <form asp-controller="Admin" asp-action="DeactivateUser" method="post">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="id" value="@user.Id" />
-                                            <button type="submit" class="admin-secondary-button" data-site-confirm="Deactivate this account? The user will no longer be able to sign in." data-site-confirm-title="Deactivate account?" data-site-confirm-cancel="Keep account" data-site-confirm-accept="Deactivate">Remove</button>
+                                            <button type="submit" class="admin-secondary-button admin-user-action-button" data-site-confirm="Deactivate this account? The user will no longer be able to sign in." data-site-confirm-title="Deactivate account?" data-site-confirm-cancel="Keep account" data-site-confirm-accept="Deactivate">Remove</button>
                                         </form>
                                     }
                                     else
                                     {
-                                        <span class="admin-muted">—</span>
+                                        <form asp-controller="Admin" asp-action="RestoreUser" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@user.Id" />
+                                            <button type="submit" class="admin-primary-button admin-user-action-button" data-site-confirm="Restore this account? The user will be able to sign in again with their existing password." data-site-confirm-title="Restore account?" data-site-confirm-cancel="Cancel" data-site-confirm-accept="Restore">Restore</button>
+                                        </form>
                                     }
                                 </td>
                             </tr>

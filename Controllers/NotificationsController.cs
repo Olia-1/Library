@@ -91,7 +91,6 @@ public class NotificationsController : Controller
             await _context.SaveChangesAsync();
         }
 
-        // Loan reminders should take readers directly to the My Loans section.
         if (notification.RelatedEntityType == "Loan" || notification.Type.StartsWith("Loan", StringComparison.OrdinalIgnoreCase))
             return Redirect((Url.Action("Index", "Account") ?? "/Account") + "#my-loans");
 

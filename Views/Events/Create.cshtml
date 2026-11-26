@@ -77,7 +77,7 @@
 
                 <div class="event-create-field">
                     <label asp-for="MaxParticipants"></label>
-                    <input asp-for="MaxParticipants" type="number" min="1" max="10000" required />
+                    <input asp-for="MaxParticipants" type="number" min="1" max="@(Model.Location == "In Library" ? 20 : 10000)" required id="maxParticipantsInput" />
                     <span asp-validation-for="MaxParticipants" class="event-create-error"></span>
                 </div>
             </div>
@@ -98,4 +98,18 @@
 </section>
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const locationSelect = document.getElementById('eventLocation');
+            const maxParticipants = document.getElementById('maxParticipantsInput');
+            if (!locationSelect || !maxParticipants) return;
+            const updateParticipantLimit = () => {
+                const isLibrary = locationSelect.value === 'In Library';
+                maxParticipants.max = isLibrary ? '20' : '10000';
+                if (isLibrary && Number(maxParticipants.value) > 20) maxParticipants.value = '20';
+            };
+            locationSelect.addEventListener('change', updateParticipantLimit);
+            updateParticipantLimit();
+        })();
+    </script>
 }

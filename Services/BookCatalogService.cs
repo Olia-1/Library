@@ -6,9 +6,6 @@ using PrivateLibrary.ViewModels;
 
 namespace PrivateLibrary.Services;
 
-/// <summary>
-/// Shared catalog operations used by Admin and Librarian endpoints.
-/// </summary>
 public sealed class BookCatalogService
 {
     private const string UkrainianLanguageCode = "uk";
@@ -51,8 +48,6 @@ public sealed class BookCatalogService
                 t => t.LanguageCode == UkrainianLanguageCode))
             .ToList();
 
-        // If even one author has no Ukrainian translation,
-        // require the user to enter the complete Ukrainian list.
         var allAuthorsHaveUkrainianNames =
             orderedAuthors.Count > 0 &&
             ukrainianAuthorTranslations.All(t => t is not null);
@@ -129,9 +124,6 @@ public sealed class BookCatalogService
         return book;
     }
 
-    /// <summary>
-    /// Updates active books only. Archived books must be restored by Admin first.
-    /// </summary>
     public async Task<Book?> UpdateActiveBookAsync(
         AdminBookViewModel model)
     {
@@ -312,9 +304,6 @@ public sealed class BookCatalogService
             .ToList();
     }
 
-    /// <summary>
-    /// Only increases copy count. Deletion is intentionally Admin-only.
-    /// </summary>
     public async Task<(Book? Book, int CurrentCount, bool WouldDecrease)>
         IncreaseCopiesAsync(int bookId, int targetCount)
     {

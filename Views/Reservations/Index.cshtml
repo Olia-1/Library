@@ -84,11 +84,11 @@
                     ? (int)Math.Ceiling((item.ExpirationDate.Value - DateTime.Now).TotalDays)
                     : (int?)null;
 
-                <article class="reader-reservation-card" data-reservation-card data-status="@effectiveStatus.ToLowerInvariant()" data-title="@item.Book?.Title" data-date="@item.ReservationDate.Ticks" data-deadline="@(item.ExpirationDate?.Ticks ?? 0)">
+                <article class="reader-reservation-card" data-reservation-card data-status="@effectiveStatus.ToLowerInvariant()" data-title="@item.Book?.DisplayTitle" data-date="@item.ReservationDate.Ticks" data-deadline="@(item.ExpirationDate?.Ticks ?? 0)">
                     <a class="reader-reservation-cover" asp-controller="Books" asp-action="Details" asp-route-id="@item.BookId">
                         @if (!string.IsNullOrWhiteSpace(item.Book?.CoverImageUrl))
                         {
-                            <img src="@item.Book.CoverImageUrl" alt="Cover of @item.Book.Title" />
+                            <img src="@item.Book.CoverImageUrl" alt="Cover of @item.Book.DisplayTitle" />
                         }
                         else
                         {
@@ -99,7 +99,7 @@
                         <div class="reader-reservation-title-row">
                             <div>
                                 <span class="reader-reservation-kicker">RESERVED BOOK</span>
-                                <h2><a asp-controller="Books" asp-action="Details" asp-route-id="@item.BookId">@item.Book?.Title</a></h2>
+                                <h2><a asp-controller="Books" asp-action="Details" asp-route-id="@item.BookId">@item.Book?.DisplayTitle</a></h2>
                             </div>
                             <span class="reader-reservation-status @statusClass">@statusLabel</span>
                         </div>

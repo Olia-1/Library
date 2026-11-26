@@ -74,7 +74,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }));
     search?.addEventListener("input", apply);
 
-    // Custom, accessible sorting menu; the native select remains the source of truth.
     const sortDropdown = document.querySelector("[data-sort-dropdown]");
     const sortTrigger = document.getElementById("reservationSortTrigger");
     const sortMenu = document.getElementById("reservationSortMenu");

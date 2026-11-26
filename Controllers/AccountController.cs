@@ -53,25 +53,25 @@ public class AccountController : Controller
                 .FirstOrDefaultAsync(),
             RecentReservations = await _context.Reservations
                 .Where(r => r.UserId == user.Id)
-                .Include(r => r.Book)
+                .Include(r => r.Book).ThenInclude(b => b!.Translations)
                 .OrderByDescending(r => r.ReservationDate)
                 .Take(5)
                 .ToListAsync(),
             FavoriteBooks = await _context.Favorites
                 .Where(f => f.UserId == user.Id)
-                .Include(f => f.Book)
+                .Include(f => f.Book).ThenInclude(b => b!.Translations)
                 .OrderByDescending(f => f.AddedAt)
                 .Take(4)
                 .ToListAsync(),
             RecentReviews = await _context.Reviews
                 .Where(r => r.UserId == user.Id)
-                .Include(r => r.Book)
+                .Include(r => r.Book).ThenInclude(b => b!.Translations)
                 .OrderByDescending(r => r.CreatedAt)
                 .Take(4)
                 .ToListAsync(),
             RecentRatings = await _context.Ratings
                 .Where(r => r.UserId == user.Id)
-                .Include(r => r.Book)
+                .Include(r => r.Book).ThenInclude(b => b!.Translations)
                 .OrderByDescending(r => r.CreatedAt)
                 .Take(4)
                 .ToListAsync(),
@@ -79,6 +79,7 @@ public class AccountController : Controller
                 .Where(l => l.UserId == user.Id && l.ReturnDate == null && l.Status == "Active")
                 .Include(l => l.Copy)
                 .ThenInclude(c => c.Book)
+                .ThenInclude(b => b!.Translations)
                 .OrderBy(l => l.DueDate)
                 .Take(4)
                 .ToListAsync(),
@@ -109,6 +110,7 @@ public class AccountController : Controller
         {
             FirstName = user.FirstName,
             LastName = user.LastName,
+            Email = user.Email,
             PhoneNumber = user.PhoneNumber,
             IsFavoritesPublic = user.IsFavoritesPublic
         });
@@ -121,8 +123,20 @@ public class AccountController : Controller
     {
         var user = await _userManager.GetUserAsync(User);
         if (user is null) return Challenge();
+        var email = string.IsNullOrWhiteSpace(model.Email) ? null : model.Email.Trim();
         if (!ModelState.IsValid) return View(model);
 
+        if (email != null)
+        {
+            var existingEmailUser = await _userManager.FindByEmailAsync(email);
+            if (existingEmailUser != null && existingEmailUser.Id != user.Id)
+            {
+                ModelState.AddModelError(nameof(model.Email), "This email address is already in use.");
+                return View(model);
+            }
+        }
+
+        user.Email = email;
         user.FirstName = model.FirstName?.Trim() ?? string.Empty;
         user.LastName = model.LastName?.Trim() ?? string.Empty;
         user.PhoneNumber = string.IsNullOrWhiteSpace(model.PhoneNumber)
@@ -210,6 +224,12 @@ public class AccountController : Controller
 
         if (user is not null)
         {
+            if (!user.IsActive)
+            {
+                ModelState.AddModelError(string.Empty, "This account has been deactivated. Please contact the library administration.");
+                return View(model);
+            }
+
             var result = await _signInManager.PasswordSignInAsync(
                 user.UserName!, model.Password, model.RememberMe, lockoutOnFailure: true);
 

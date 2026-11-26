@@ -74,19 +74,36 @@ public class AdminController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Users()
+    public async Task<IActionResult> Users(string? search, string? role, string? status)
     {
         var users = await _userManager.Users.AsNoTracking().OrderBy(u => u.UserName).ToListAsync();
         var model = new List<AdminUserViewModel>();
         foreach (var user in users)
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+            var roleText = string.Join(", ", roles);
+            if (!string.IsNullOrWhiteSpace(search) &&
+                !(user.UserName ?? "").Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                !(user.Email ?? "").Contains(search.Trim(), StringComparison.OrdinalIgnoreCase))
+                continue;
+            if (!string.IsNullOrWhiteSpace(role) && !roles.Contains(role, StringComparer.OrdinalIgnoreCase))
+                continue;
+            if (status == "active" && !user.IsActive || status == "deactivated" && user.IsActive)
+                continue;
+
             model.Add(new AdminUserViewModel
             {
                 Id = user.Id,
                 UserName = user.UserName ?? "",
                 Email = user.Email,
-                Roles = string.Join(", ", await _userManager.GetRolesAsync(user)),
+                Roles = roleText,
                 IsActive = user.IsActive
             });
+        }
+        ViewBag.Search = search;
+        ViewBag.Role = role;
+        ViewBag.Status = status;
+        ViewBag.TotalUsers = await _userManager.Users.CountAsync();
         return View(model);
     }
 
@@ -176,7 +193,6 @@ public class AdminController : Controller
             return RedirectToAction(nameof(Users));
         }
 
-        // Refresh the security stamp so existing sign-in cookies are invalidated.
         await _userManager.UpdateSecurityStampAsync(user);
 
         if (await _userManager.IsInRoleAsync(user, "Reader"))
@@ -198,23 +214,73 @@ public class AdminController : Controller
         return RedirectToAction(nameof(Users));
     }
 
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> RestoreUser(int id)
+    {
+        var user = await _userManager.FindByIdAsync(id.ToString());
+        if (user == null) return NotFound();
+
+        if (user.IsActive)
+        {
+            TempData["AdminMessage"] = $"Account '{user.UserName}' is already active.";
+            return RedirectToAction(nameof(Users));
+        }
+
+        user.IsActive = true;
+        var updateResult = await _userManager.UpdateAsync(user);
+        if (!updateResult.Succeeded)
+        {
+            TempData["AdminError"] = string.Join(" ", updateResult.Errors.Select(e => e.Description));
+            return RedirectToAction(nameof(Users));
+        }
+
+        await _userManager.UpdateSecurityStampAsync(user);
+
+        TempData["AdminMessage"] = $"Account '{user.UserName}' has been restored. The user can sign in again with their existing credentials.";
+        return RedirectToAction(nameof(Users));
+    }
+
     [HttpGet]
     public IActionResult Moderation() => View();
 
     [HttpGet]
-    public async Task<IActionResult> Reviews()
+    public async Task<IActionResult> Reviews(string? search, string? status, DateTime? from, DateTime? to)
     {
-        var reviews = await _context.Reviews.AsNoTracking().Include(r => r.User).Include(r => r.Book)
-            .OrderByDescending(r => r.CreatedAt).ToListAsync();
+        var query = _context.Reviews.AsNoTracking().Include(r => r.User).Include(r => r.Book).AsQueryable();
+        var invalidDateRange = HasInvalidDateRange(from, to);
+        if (invalidDateRange)
+            query = query.Where(_ => false);
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            query = query.Where(r => r.Book.Title.Contains(term) || (r.User.UserName != null && r.User.UserName.Contains(term)) || (r.User.Email != null && r.User.Email.Contains(term)));
+        }
+        if (!string.IsNullOrWhiteSpace(status)) query = query.Where(r => r.ModerationStatus == status);
+        if (!invalidDateRange && from.HasValue) query = query.Where(r => r.CreatedAt >= from.Value.Date);
+        if (!invalidDateRange && to.HasValue) query = query.Where(r => r.CreatedAt < to.Value.Date.AddDays(1));
+        var reviews = await query.OrderByDescending(r => r.CreatedAt).ToListAsync();
+        ViewBag.Search = search; ViewBag.Status = status; ViewBag.From = from?.ToString("yyyy-MM-dd"); ViewBag.To = to?.ToString("yyyy-MM-dd");
         return View(reviews);
     }
 
     [HttpGet]
-    public async Task<IActionResult> Ratings()
+    public async Task<IActionResult> Ratings(string? search, string? status, int? value, DateTime? from, DateTime? to)
     {
-        var ratings = await _context.Ratings.AsNoTracking()
-            .Include(r => r.User).Include(r => r.Book)
-            .OrderByDescending(r => r.CreatedAt).ToListAsync();
+        var query = _context.Ratings.AsNoTracking().Include(r => r.User).Include(r => r.Book).AsQueryable();
+        var invalidDateRange = HasInvalidDateRange(from, to);
+        if (invalidDateRange)
+            query = query.Where(_ => false);
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            query = query.Where(r => r.Book.Title.Contains(term) || (r.User.UserName != null && r.User.UserName.Contains(term)) || (r.User.Email != null && r.User.Email.Contains(term)));
+        }
+        if (!string.IsNullOrWhiteSpace(status)) query = query.Where(r => r.ModerationStatus == status);
+        if (value.HasValue) query = query.Where(r => r.Value == value.Value);
+        if (!invalidDateRange && from.HasValue) query = query.Where(r => r.CreatedAt >= from.Value.Date);
+        if (!invalidDateRange && to.HasValue) query = query.Where(r => r.CreatedAt < to.Value.Date.AddDays(1));
+        var ratings = await query.OrderByDescending(r => r.CreatedAt).ToListAsync();
+        ViewBag.Search = search; ViewBag.Status = status; ViewBag.Value = value; ViewBag.From = from?.ToString("yyyy-MM-dd"); ViewBag.To = to?.ToString("yyyy-MM-dd");
         return View(ratings);
     }
 
@@ -246,10 +312,23 @@ public class AdminController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Events()
+    public async Task<IActionResult> Events(string? search, string? status, string? location, DateTime? from, DateTime? to)
     {
-        var events = await _context.Events.AsNoTracking().Include(e => e.Creator)
-            .OrderByDescending(e => e.CreatedAt).ToListAsync();
+        var query = _context.Events.AsNoTracking().Include(e => e.Creator).AsQueryable();
+        var invalidDateRange = HasInvalidDateRange(from, to);
+        if (invalidDateRange)
+            query = query.Where(_ => false);
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            query = query.Where(e => e.Title.Contains(term) || (e.Creator.UserName != null && e.Creator.UserName.Contains(term)) || (e.Creator.Email != null && e.Creator.Email.Contains(term)));
+        }
+        if (!string.IsNullOrWhiteSpace(status)) query = query.Where(e => (e.ModerationStatus ?? "Approved") == status);
+        if (!string.IsNullOrWhiteSpace(location)) query = query.Where(e => e.Location == location);
+        if (!invalidDateRange && from.HasValue) query = query.Where(e => e.EventDate >= from.Value.Date);
+        if (!invalidDateRange && to.HasValue) query = query.Where(e => e.EventDate < to.Value.Date.AddDays(1));
+        var events = await query.OrderByDescending(e => e.CreatedAt).ToListAsync();
+        ViewBag.Search = search; ViewBag.Status = status; ViewBag.Location = location; ViewBag.From = from?.ToString("yyyy-MM-dd"); ViewBag.To = to?.ToString("yyyy-MM-dd");
         return View(events);
     }
 
@@ -348,11 +427,9 @@ public class AdminController : Controller
 
         if (item == null) return NotFound();
 
-        // Notify registered participants before removing the event.
         await _notifications.NotifyEventParticipantsAsync(item.EventId, "Event cancelled",
             $"The event “{item.Title}” has been cancelled by the library administration.");
 
-        // Remove registrations first so no orphaned participant records remain.
         _context.EventParticipants.RemoveRange(item.Participants);
         _context.Events.Remove(item);
         await _context.SaveChangesAsync();
@@ -361,10 +438,6 @@ public class AdminController : Controller
         return RedirectToAction(nameof(Events));
     }
 
-
-
-
-    // Administrative catalog management
     [HttpGet]
     public async Task<IActionResult> Books(
         string? search,
@@ -479,7 +552,6 @@ public class AdminController : Controller
         return RedirectToAction(nameof(Books));
     }
 
-    
 [HttpGet]
 public async Task<IActionResult> EditBook(int id)
 {
@@ -492,7 +564,6 @@ public async Task<IActionResult> EditBook(int id)
 
     return View(model);
 }
-
 
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> EditBook(AdminBookViewModel model)
@@ -614,7 +685,6 @@ public async Task<IActionResult> EditBook(int id)
         return RedirectToAction(nameof(ManageCopies), new { bookId });
     }
 
-
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> ArchiveBook(int bookId)
     {
@@ -713,4 +783,13 @@ public async Task<IActionResult> EditBook(int id)
 
         TempData["AdminMessage"] = $"Book '{book.Title}' was permanently deleted.";
         return RedirectToAction(nameof(Books));
-    }}
+    }
+    private bool HasInvalidDateRange(DateTime? from, DateTime? to)
+    {
+        var invalid = from.HasValue && to.HasValue && from.Value.Date > to.Value.Date;
+        if (invalid)
+            ViewBag.DateRangeError = "The 'from' date cannot be later than the 'to' date.";
+
+        return invalid;
+    }
+}

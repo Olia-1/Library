@@ -27,8 +27,6 @@ public class EventsController : Controller
         var currentUserId = user?.Id;
         var (canCreateEvents, createEventMessage, _) = await GetEventCreationAccessAsync(user);
 
-        // A signed-in user can see
-        // their own events while they are awaiting moderation.
         var query = _context.Events
             .AsNoTracking()
             .Where(e => e.Status != "Cancelled" &&
@@ -74,7 +72,6 @@ public class EventsController : Controller
             CreateEventMessage = createEventMessage
         });
     }
-
 
     [HttpGet]
     public async Task<IActionResult> AvailableTimes(DateTime date, int durationMinutes, string location = "In Library")
@@ -140,6 +137,8 @@ public class EventsController : Controller
         if (!allowed)
         {
             TempData["Error"] = message;
+            if (message?.Contains("email address", StringComparison.OrdinalIgnoreCase) == true)
+                return RedirectToAction("EditProfile", "Account");
             return RedirectToAction(nameof(Index));
         }
 
@@ -164,8 +163,21 @@ public class EventsController : Controller
         if (!allowed)
         {
             TempData["Error"] = message;
+            if (message?.Contains("email address", StringComparison.OrdinalIgnoreCase) == true)
+                return RedirectToAction("EditProfile", "Account");
             return RedirectToAction(nameof(Index));
         }
+
+        var creatorRoles = await _userManager.GetRolesAsync(user);
+        var isReaderCreator = creatorRoles.Contains("Reader", StringComparer.OrdinalIgnoreCase);
+        if (isReaderCreator && model.Location == "In Library" && string.IsNullOrWhiteSpace(user.Email))
+        {
+            TempData["Error"] = "Please add an email address in My Profile → Edit Profile before creating an in-library event.";
+            return RedirectToAction("EditProfile", "Account");
+        }
+
+        if (model.Location == "In Library" && model.MaxParticipants > 20)
+            ModelState.AddModelError(nameof(model.MaxParticipants), "Library events can have no more than 20 participants.");
 
         if (!model.EventDate.HasValue || model.EventDate.Value <= DateTime.Now)
             ModelState.AddModelError(nameof(model.EventDate), "Choose a date and time in the future.");
@@ -244,9 +256,32 @@ public class EventsController : Controller
         _context.Events.Add(libraryEvent);
         await _context.SaveChangesAsync();
 
-        TempData["EventMessage"] = autoApprove
+        var rolesForCreator = await _userManager.GetRolesAsync(user);
+        var isReader = rolesForCreator.Contains("Reader", StringComparer.OrdinalIgnoreCase);
+        var coordinationMessage = "To coordinate your library event, please contact PrivatLibrary@gmail.com at least 3 days before the event.";
+
+        if (isReader && model.Location == "In Library")
+        {
+            _context.Notifications.Add(new Notification
+            {
+                UserId = user.Id,
+                Title = "Library event coordination required",
+                Message = $"Your event ‘{libraryEvent.Title}’ has been submitted. {coordinationMessage}",
+                Type = "Event",
+                RelatedEntityType = "Event",
+                RelatedEntityId = libraryEvent.EventId,
+                CreatedAt = DateTime.UtcNow,
+                IsRead = false
+            });
+            await _context.SaveChangesAsync();
+        }
+
+        var creationMessage = autoApprove
             ? "Your event has been created and is now visible to readers."
             : "Your event has been submitted and is awaiting administrator approval.";
+        TempData["EventMessage"] = isReader && model.Location == "In Library"
+            ? $"{creationMessage} {coordinationMessage}"
+            : creationMessage;
 
         return RedirectToAction(nameof(Details), new { id = libraryEvent.EventId });
     }
@@ -269,9 +304,10 @@ public class EventsController : Controller
             s.UserId == user.Id && s.Status == "Active" &&
             s.StartDate <= now && s.EndDate > now && s.MembershipPlan.IsActive);
 
-        return hasActiveSubscription
-            ? (true, null, false)
-            : (false, "An active library membership is required to create an event. Please choose a membership plan in your account.", false);
+        if (!hasActiveSubscription)
+            return (false, "An active library membership is required to create an event. Please choose a membership plan in your account.", false);
+
+        return (true, null, false);
     }
 
     [AllowAnonymous]
@@ -358,7 +394,6 @@ public class EventsController : Controller
 
         if (libraryEvent == null) return NotFound();
 
-        // Organizers manage their own events and cannot register as participants.
         if (libraryEvent.CreatedBy == user.Id)
             return RedirectToAction(nameof(Details), new { id });
 
@@ -409,7 +444,6 @@ public class EventsController : Controller
             .FirstOrDefaultAsync(e => e.EventId == id);
         if (libraryEvent == null) return NotFound();
 
-        // An event organizer is not a participant and cannot cancel participation.
         if (libraryEvent.CreatedBy == user.Id)
             return RedirectToAction(nameof(Details), new { id });
 
@@ -436,8 +470,6 @@ public class EventsController : Controller
         ViewBag.CanCreateEvents = canCreateEvents;
         ViewBag.CreateEventMessage = createEventMessage;
 
-        // Show both events created by the current user and events they joined.
-        // The OR condition prevents an event from appearing twice.
         var events = await _context.Events
             .AsNoTracking()
             .Where(e => e.Status != "Cancelled" &&

@@ -50,7 +50,6 @@ public class BooksController : Controller
         if (genreId.HasValue)
             query = query.Where(b => b.GenreId == genreId.Value);
 
-            
         string? yearRangeError = null;
         var currentYear = DateTime.Today.Year;
 
@@ -130,7 +129,6 @@ public class BooksController : Controller
             ViewBag.IsFavorite = false;
         }
 
-        // Reviews and ratings are intentionally visible only to signed-in users.
         if (model.CanViewCommunityContent)
         {
             model.ApprovedReviews = await _context.Reviews.AsNoTracking()

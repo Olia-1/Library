@@ -1,6 +1,5 @@
 namespace PrivateLibrary.Models;
 
-/// <summary>A reader's like on a published review. One like per reader and review.</summary>
 public class ReviewLike
 {
     public int ReviewId { get; set; }

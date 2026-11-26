@@ -38,7 +38,7 @@
                 {
                     "Reservation" => "▤",
                     "Loan" or "LoanDueSoon" or "LoanDueToday" or "LoanOverdue" => "▣",
-                    "Event" => "✧",
+                    "Event" or "EventReminder" => "✧",
                     "Review" => "✎",
                     "Rating" => "☆",
                     "Membership" or "MembershipExpiring" => "♙",
@@ -59,6 +59,16 @@
                         <p>@EnglishNotificationMessage(notification.Message)</p>
                         <div class="notification-card-footer">
                             <span class="notification-status">@(notification.IsRead ? "Read" : "Unread")</span>
+                            @if (!string.IsNullOrWhiteSpace(notification.ActionUrl))
+                            {
+                                <a class="notification-action-link"
+                                   href="@notification.ActionUrl"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   onclick="event.stopPropagation();">
+                                    Join conference →
+                                </a>
+                            }
                         </div>
                         <form class="notification-card-open-form" asp-controller="Notifications" asp-action="MarkAsRead" method="post" hidden>
                             @Html.AntiForgeryToken()

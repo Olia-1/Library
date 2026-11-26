@@ -33,12 +33,12 @@
                 <article class="favorite-book-card">
                     <a asp-controller="Books" asp-action="Details" asp-route-id="@favorite.BookId" class="favorite-book-cover">
                         @if (!string.IsNullOrWhiteSpace(book.CoverImageUrl))
-                        { <img src="@book.CoverImageUrl" alt="Cover of @book.Title" loading="lazy" /> }
+                        { <img src="@book.CoverImageUrl" alt="Cover of @book.DisplayTitle" loading="lazy" /> }
                         else { <span class="favorite-cover-placeholder">✧</span> }
                     </a>
                     <div class="favorite-book-content">
-                        @if (book.Genre is not null) { <span class="favorite-book-genre">@book.Genre.Name</span> }
-                        <h2><a asp-controller="Books" asp-action="Details" asp-route-id="@favorite.BookId">@book.Title</a></h2>
+                        @if (book.Genre is not null) { <span class="favorite-book-genre">@book.Genre.DisplayName</span> }
+                        <h2><a asp-controller="Books" asp-action="Details" asp-route-id="@favorite.BookId">@book.DisplayTitle</a></h2>
                         <p>@(authors.Any() ? string.Join(", ", authors) : "Author not specified")</p>
                     </div>
                 </article>

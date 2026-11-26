@@ -33,7 +33,6 @@ public class FavoritesController : Controller
         return View(favorites);
     }
 
-    // Public ranking of the 20 books most frequently added to readers' favorites.
     [AllowAnonymous]
     [HttpGet]
     public async Task<IActionResult> Popular()
@@ -53,9 +52,10 @@ public class FavoritesController : Controller
         var bookIds = ranking.Select(item => item.BookId).ToList();
         var books = await _context.Books.AsNoTracking()
             .Where(book => bookIds.Contains(book.BookId))
-            .Include(book => book.Genre)
+            .Include(book => book.Genre).ThenInclude(genre => genre!.Translations)
+            .Include(book => book.Translations)
             .Include(book => book.BookAuthors)
-                .ThenInclude(bookAuthor => bookAuthor.Author)
+                .ThenInclude(bookAuthor => bookAuthor.Author).ThenInclude(author => author.Translations)
             .ToDictionaryAsync(book => book.BookId);
 
         var model = ranking
@@ -71,7 +71,6 @@ public class FavoritesController : Controller
         return View(model);
     }
 
-    // Public read-only collection. Only the owner can change visibility.
     [AllowAnonymous]
     [HttpGet]
     public async Task<IActionResult> Public(int id)
@@ -143,10 +142,11 @@ public class FavoritesController : Controller
         _context.Favorites.AsNoTracking()
             .Where(f => f.UserId == userId)
             .Include(f => f.Book)
-                .ThenInclude(b => b!.Genre)
+                .ThenInclude(b => b!.Genre).ThenInclude(g => g!.Translations)
+            .Include(f => f.Book).ThenInclude(b => b!.Translations)
             .Include(f => f.Book)
                 .ThenInclude(b => b!.BookAuthors)
-                    .ThenInclude(ba => ba.Author)
+                    .ThenInclude(ba => ba.Author).ThenInclude(a => a.Translations)
             .OrderByDescending(f => f.AddedAt);
 
     private int? GetUserId()

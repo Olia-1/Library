@@ -5,6 +5,7 @@
     var authors = book.BookAuthors.Select(x => x.Author?.DisplayFullName ?? string.Empty)
         .Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
     var availableCopies = book.Copies.Count(c => string.Equals(c.Status, "Available", StringComparison.OrdinalIgnoreCase));
+    var canLeaveOpinions = User.Identity?.IsAuthenticated == true && User.IsInRole("Reader");
 }
 <section class="book-details-page">
     <a asp-controller="Books" asp-action="Index" class="details-back-link">← Back to catalog</a>
@@ -94,6 +95,8 @@
                         }
                     </div>
                 }
+                @if (canLeaveOpinions)
+                {
                 @if (Model.MyRating is not null) { <p class="details-moderation-note">Your rating: @Model.MyRating.Value/5 · @Model.MyRating.ModerationStatus</p> }
                 <details class="details-composer"><summary>@(Model.MyRating is null ? "Leave a rating" : "Edit your rating")</summary>
                     <form asp-action="SaveRating" method="post" class="details-opinion-form details-compact-form" novalidate data-opinion-form="rating">
@@ -125,6 +128,7 @@
                 {
                     <form asp-action="DeleteRating" method="post">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.MyRating.RatingId" /><input type="hidden" name="bookId" value="@book.BookId" /><button type="submit" class="details-delete-button">Delete my rating</button></form>
                 }
+                }
             </div>
             <div class="details-reviews-section" id="reviews">
                 <div class="details-section-heading"><div><span class="details-kicker">READERS' OPINIONS</span><h2>Reviews</h2></div><span class="details-review-total">@Model.ApprovedReviews.Count published</span></div>
@@ -133,6 +137,8 @@
                 {
                     <article class="details-review"><div class="review-main"><div class="review-topline"><a class="community-author-link" asp-controller="Profile" asp-action="Index" asp-route-id="@review.UserId"><span class="community-author-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="8" r="3.4"></circle><path d="M5.5 20c.5-3.7 3-5.6 6.5-5.6s6 1.9 6.5 5.6"></path></svg></span><strong>@(string.IsNullOrWhiteSpace(review.User?.UserName) ? "Reader" : review.User.UserName)</strong></a><time>@review.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy", System.Globalization.CultureInfo.GetCultureInfo("en-GB"))</time></div><p>@review.Text</p></div></article>
                 }
+                @if (canLeaveOpinions)
+                {
                 @if (Model.MyReview is not null) { <p class="details-moderation-note">Your review status: @Model.MyReview.ModerationStatus @if (Model.MyReview.UpdatedAt.HasValue) { <span>· Edited @Model.MyReview.UpdatedAt.Value.ToLocalTime().ToString("dd MMM yyyy")</span> }</p> }
                 <details class="details-composer"><summary>@(Model.MyReview is null ? "Write a review" : "Edit your review")</summary>
                     <form asp-action="SaveReview" method="post" class="details-opinion-form details-compact-form" novalidate data-opinion-form="review">
@@ -149,12 +155,11 @@
                 {
                     <form asp-action="DeleteReview" method="post">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.MyReview.ReviewId" /><input type="hidden" name="bookId" value="@book.BookId" /><button type="submit" class="details-delete-button">Delete my review</button></form>
                 }
+                }
             </div>
         </section>
     }
 </section>
-
-
 
 @section Scripts {
     <script>

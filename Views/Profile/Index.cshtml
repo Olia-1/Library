@@ -1,6 +1,5 @@
 @model PrivateLibrary.ViewModels.PublicProfileViewModel
 @{
-    // Public profile identity is the account nickname, never the reader's legal name.
     var displayName = string.IsNullOrWhiteSpace(Model.User.UserName) ? "Reader" : Model.User.UserName;
     ViewData["Title"] = $"{displayName}'s Profile";
 }
@@ -31,10 +30,10 @@
                         var authors = book.BookAuthors.Select(a => $"{a.Author?.FirstName} {a.Author?.LastName}".Trim()).Where(a => !string.IsNullOrWhiteSpace(a));
                         <article class="public-profile-book-card">
                             <a class="public-profile-book-cover" asp-controller="Books" asp-action="Details" asp-route-id="@book.BookId">
-                                @if (!string.IsNullOrWhiteSpace(book.CoverImageUrl)) { <img src="@book.CoverImageUrl" alt="Cover of @book.Title" loading="lazy" /> }
+                                @if (!string.IsNullOrWhiteSpace(book.CoverImageUrl)) { <img src="@book.CoverImageUrl" alt="Cover of @book.DisplayTitle" loading="lazy" /> }
                                 else { <span>✧</span> }
                             </a>
-                            <div><h3><a asp-controller="Books" asp-action="Details" asp-route-id="@book.BookId">@book.Title</a></h3><p>@(authors.Any() ? string.Join(", ", authors) : "Author not specified")</p></div>
+                            <div><h3><a asp-controller="Books" asp-action="Details" asp-route-id="@book.BookId">@book.DisplayTitle</a></h3><p>@(authors.Any() ? string.Join(", ", authors) : "Author not specified")</p></div>
                         </article>
                     }
                 </div>
@@ -59,7 +58,7 @@
             <div class="public-profile-opinion-list">
                 @foreach (var review in Model.Reviews)
                 {
-                    <article class="public-profile-opinion"><div class="public-profile-opinion-heading"><h3><a asp-controller="Books" asp-action="Details" asp-route-id="@review.BookId">@review.Book?.Title</a></h3><time>@review.CreatedAt.ToLocalTime().ToString("dd MMM yyyy", System.Globalization.CultureInfo.GetCultureInfo("en-GB"))</time></div><p>@review.Text</p></article>
+                    <article class="public-profile-opinion"><div class="public-profile-opinion-heading"><h3><a asp-controller="Books" asp-action="Details" asp-route-id="@review.BookId">@review.Book?.DisplayTitle</a></h3><time>@review.CreatedAt.ToLocalTime().ToString("dd MMM yyyy", System.Globalization.CultureInfo.GetCultureInfo("en-GB"))</time></div><p>@review.Text</p></article>
                 }
             </div>
         }
@@ -76,7 +75,7 @@
             <div class="public-profile-rating-list">
                 @foreach (var rating in Model.Ratings)
                 {
-                    <article class="public-profile-rating"><a asp-controller="Books" asp-action="Details" asp-route-id="@rating.BookId">@rating.Book?.Title</a><span>@rating.Value/5 <img src="~/images/laurel-small.png" asp-append-version="true" alt="" /></span>@if (!string.IsNullOrWhiteSpace(rating.Text)) { <p>@rating.Text</p> }</article>
+                    <article class="public-profile-rating"><a asp-controller="Books" asp-action="Details" asp-route-id="@rating.BookId">@rating.Book?.DisplayTitle</a><span>@rating.Value/5 <img src="~/images/laurel-small.png" asp-append-version="true" alt="" /></span>@if (!string.IsNullOrWhiteSpace(rating.Text)) { <p>@rating.Text</p> }</article>
                 }
             </div>
         }

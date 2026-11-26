@@ -20,10 +20,12 @@ public class Event
     [StringLength(255)]
     public string? Location { get; set; }
 
+    [StringLength(2048)]
+    public string? ConferenceUrl { get; set; }
+
     [Range(1, int.MaxValue)]
     public int MaxParticipants { get; set; }
 
-    // Event duration in minutes.
     [Range(30, 1440)]
     public int DurationMinutes { get; set; } = 60;
 
@@ -48,7 +50,6 @@ public class Event
     [StringLength(20)]
     public string? ModerationStatus { get; set; } = "Pending";
 
-    // Hiding an event must not delete its registrations.
     public bool IsVisible { get; set; } = true;
 
     public ICollection<EventParticipant> Participants { get; set; }

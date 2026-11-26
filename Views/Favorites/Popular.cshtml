@@ -35,14 +35,14 @@
             {
                 var book = item.Book;
                 var authors = book.BookAuthors
-                    .Select(x => $"{x.Author?.FirstName} {x.Author?.LastName}".Trim())
+                    .Select(x => $"{x.Author?.DisplayFullName}".Trim())
                     .Where(x => !string.IsNullOrWhiteSpace(x));
                 <article class="favorite-book-card popular-book-card">
                     <span class="popular-book-rank" aria-label="Rank @item.Position">#@item.Position</span>
                     <a asp-controller="Books" asp-action="Details" asp-route-id="@book.BookId" class="favorite-book-cover">
                         @if (!string.IsNullOrWhiteSpace(book.CoverImageUrl))
                         {
-                            <img src="@book.CoverImageUrl" alt="Cover of @book.Title" loading="lazy" />
+                            <img src="@book.CoverImageUrl" alt="Cover of @book.DisplayTitle" loading="lazy" />
                         }
                         else
                         {
@@ -52,9 +52,9 @@
                     <div class="favorite-book-content">
                         @if (book.Genre is not null)
                         {
-                            <span class="favorite-book-genre">@book.Genre.Name</span>
+                            <span class="favorite-book-genre">@book.Genre.DisplayName</span>
                         }
-                        <h2><a asp-controller="Books" asp-action="Details" asp-route-id="@book.BookId">@book.Title</a></h2>
+                        <h2><a asp-controller="Books" asp-action="Details" asp-route-id="@book.BookId">@book.DisplayTitle</a></h2>
                         <p>@(authors.Any() ? string.Join(", ", authors) : "Author not specified")</p>
                         <div class="popular-book-count">
                             <span aria-hidden="true">♡</span>

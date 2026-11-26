@@ -26,7 +26,9 @@ public class LoansController : Controller
         var query = _context.Loans.AsNoTracking()
             .Where(l => l.UserId == userId)
             .Include(l => l.Copy).ThenInclude(c => c.Book)
-                .ThenInclude(b => b!.BookAuthors).ThenInclude(ba => ba.Author)
+                .ThenInclude(b => b!.Translations)
+                .Include(l => l.Copy).ThenInclude(c => c.Book)
+                    .ThenInclude(b => b!.BookAuthors).ThenInclude(ba => ba.Author).ThenInclude(a => a.Translations)
             .AsQueryable();
 
         query = filter.ToLowerInvariant() switch

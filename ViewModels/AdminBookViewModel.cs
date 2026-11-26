@@ -51,7 +51,6 @@ public class AdminBookViewModel : IValidatableObject
 {
     public int BookId { get; set; }
 
-    // English
     [Required(ErrorMessage = "The English title is required.")]
     [StringLength(255)]
     [Display(Name = "Title")]
@@ -67,7 +66,6 @@ public class AdminBookViewModel : IValidatableObject
     [Display(Name = "Authors (one per line)")]
     public string AuthorNames { get; set; } = string.Empty;
 
-    // Ukrainian
     [Required(ErrorMessage = "The Ukrainian title is required.")]
     [StringLength(255)]
     [Display(Name = "Назва")]
@@ -83,7 +81,6 @@ public class AdminBookViewModel : IValidatableObject
     [Display(Name = "Автори (кожен з нового рядка)")]
     public string AuthorNamesUk { get; set; } = string.Empty;
 
-    // Shared book information
     [StringLength(20)]
     public string? ISBN { get; set; }
 
@@ -106,8 +103,6 @@ public class AdminBookViewModel : IValidatableObject
     [Display(Name = "Initial number of copies")]
     public int InitialCopies { get; set; } = 1;
 
-    // Remembers which language panel was open after validation.
-    // This property is not stored in the database.
     public string ActiveLanguage { get; set; } = "en";
 
     public IEnumerable<ValidationResult> Validate(

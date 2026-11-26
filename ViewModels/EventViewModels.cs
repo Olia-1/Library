@@ -65,6 +65,11 @@ public class CreateEventViewModel
     [Display(Name = "Location")]
     public string Location { get; set; } = "In Library";
 
+    [StringLength(2048, ErrorMessage = "The conference link is too long.")]
+    [Url(ErrorMessage = "Enter a valid conference URL.")]
+    [Display(Name = "Conference link")]
+    public string? ConferenceUrl { get; set; }
+
     [Required(ErrorMessage = "Event duration is required.")]
     [Range(30, 1440, ErrorMessage = "Duration must be between 30 minutes and 24 hours.")]
     [Display(Name = "Duration")]
